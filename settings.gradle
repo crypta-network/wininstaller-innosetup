@@ -1,3 +1,3 @@
-include ':fred'
+include ':cryptad'
 
-project(':fred').projectDir = new File("fred");
+project(':cryptad').projectDir = new File("cryptad");

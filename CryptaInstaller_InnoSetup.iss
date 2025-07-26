@@ -21,7 +21,7 @@ AppUpdatesURL={#AppURL}
 DefaultDirName={localappdata}\{#AppName}
 DefaultGroupName={#AppName}
 OutputBaseFilename=CryptaInstaller
-SetupIconFile=FreenetInstaller_InnoSetup.ico
+SetupIconFile=CryptaInstaller_InnoSetup.ico
 SolidCompression=yes
 PrivilegesRequired=lowest
 WizardImageFile=Wizard_FreenetInstall.bmp
@@ -65,11 +65,11 @@ Name: "traditional_chinese"; MessagesFile: ".\unofficial\ChineseTraditional.isl,
 Source: "{app}\wrapper\wrapper.conf"; DestDir: "{app}\wrapper"; DestName: "wrapper.conf.old"; Flags: external skipifsourcedoesntexist
 
 [Files]
-Source: "FreenetInstaller_InnoSetup_library\FreenetInstaller_InnoSetup_library.dll"; DestDir: "{tmp}"; Flags: ignoreversion dontcopy
+Source: "CryptaInstaller_InnoSetup_library\CryptaInstaller_InnoSetup_library.dll"; DestDir: "{tmp}"; Flags: ignoreversion dontcopy
 Source: "install_bundle\OpenJDK11U-jre_x86-32_windows_hotspot_11.0.15_10.msi"; DestDir: "{tmp}"; Flags: ignoreversion dontcopy nocompression
 Source: "install_bundle\OpenJDK11U-jre_x64_windows_hotspot_11.0.15_10.msi"; DestDir: "{tmp}"; Flags: ignoreversion dontcopy nocompression
 Source: "install_bundle\dotNetFx40_Full_setup.exe"; DestDir: "{tmp}"; Flags: ignoreversion dontcopy nocompression
-#include "fred_deps.iss"
+#include "cryptad_deps.iss"
 Source: "install_node\FreenetTray.exe"; DestDir: "{app}"; Flags: ignoreversion nocompression
 Source: "install_node\FreenetTray.exe.config"; DestDir: "{app}"; Flags: ignoreversion
 Source: "install_node\freenet.ico"; DestDir: "{app}"; Flags: ignoreversion
@@ -134,10 +134,10 @@ var
   sWrapperJavaMaxMemory, sFproxyPort, sFcpPort :string;
 
 function IsPortAvailable(sIpAddress: ansistring; wPort: word): boolean;
-external 'fIsPortAvailable@files:FreenetInstaller_InnoSetup_library.dll stdcall setuponly';
+external 'fIsPortAvailable@files:CryptaInstaller_InnoSetup_library.dll stdcall setuponly';
 
 function MemoryTotalPhys(var NodeMaxMem: integer): boolean;
-external 'fMemoryTotalPhys@files:FreenetInstaller_InnoSetup_library.dll stdcall setuponly';
+external 'fMemoryTotalPhys@files:CryptaInstaller_InnoSetup_library.dll stdcall setuponly';
 
 function CreateDependencyPage(Name, MissingKey: string; InstallClickHandler: TNotifyEvent) : TDependencyPage; Forward;
 
