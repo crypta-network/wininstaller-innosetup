@@ -1,4 +1,4 @@
-### FreenetInstaller_InnoSetup_library.dll
+### CryptaInstaller_InnoSetup_library.dll
 This library provides functions used by the installer for external tasks:
 
  * fIsPortAvailable
