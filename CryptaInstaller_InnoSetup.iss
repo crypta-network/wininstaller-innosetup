@@ -21,13 +21,13 @@ AppUpdatesURL={#AppURL}
 DefaultDirName={localappdata}\{#AppName}
 DefaultGroupName={#AppName}
 OutputBaseFilename=CryptaInstaller
-SetupIconFile=CryptaInstaller_InnoSetup.ico
+SetupIconFile=resources\CryptaInstaller_InnoSetup.ico
 UninstallDisplayIcon={app}\CryptaInstaller_InnoSetup_Uninstall.ico
 UninstallDisplayName={#AppName}
 SolidCompression=yes
 PrivilegesRequired=lowest
-WizardImageFile=Wizard_FreenetInstall.bmp
-WizardSmallImageFile=blue_bunny_package.bmp
+WizardImageFile=resources\Wizard_FreenetInstall.bmp
+WizardSmallImageFile=resources\blue_bunny_package.bmp
 ;Space needed 650 Mo
 ExtraDiskSpaceRequired=681574400
 Compression=lzma2/ultra
@@ -78,7 +78,7 @@ Source: "install_node\wrapper\wrapper.jar"; DestDir: "{app}\wrapper"; Flags: ign
 Source: "install_node\wrapper\wrapper-windows-x86-32.dll"; DestDir: "{app}\wrapper"; Flags: ignoreversion
 Source: "install_node\wrapper\wrapper-windows-x86-64.dll"; DestDir: "{app}\wrapper"; Flags: ignoreversion
 Source: "install_node\wrapper\wrapper.conf"; DestDir: "{app}\wrapper"; Flags: ignoreversion; AfterInstall: WrapperConfDoAfterInstall
-Source: "CryptaInstaller_InnoSetup_Uninstall.ico"; DestDir: "{app}"; Flags: ignoreversion
+Source: "resources\CryptaInstaller_InnoSetup_Uninstall.ico"; DestDir: "{app}"; Flags: ignoreversion
 
 [Tasks]
 Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{cm:AdditionalIcons}"; Flags: unchecked
