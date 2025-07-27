@@ -318,18 +318,18 @@ begin
   end;
 end;
 
-procedure FreenetJarDoAfterInstall();
+procedure CryptadJarDoAfterInstall();
 var
   sConfigLines : array[0..5] of string;
 begin
-  if not FileExists(ExpandConstant('{app}\freenet.ini')) then begin
+  if not FileExists(ExpandConstant('{app}\cryptad.ini')) then begin
     sConfigLines[0] := 'fproxy.port=' + sFproxyPort;
     sConfigLines[1] := 'fcp.port=' + sFcpPort;
     sConfigLines[2] := 'pluginmanager.loadplugin=JSTUN;KeyUtils;UPnP;Sharesite';
     sConfigLines[3] := 'node.updater.autoupdate=true';
     sConfigLines[4] := 'node.downloadsDir=.\downloads';
     sConfigLines[5] := 'End';
-    SaveStringsToUTF8File(ExpandConstant('{app}\freenet.ini'), sConfigLines, False);
+    SaveStringsToUTF8File(ExpandConstant('{app}\cryptad.ini'), sConfigLines, False);
   end;
 end;
 

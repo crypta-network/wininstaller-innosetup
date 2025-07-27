@@ -44,9 +44,9 @@ task updateSetupFile {
 			
 			switch(dep.getName()) {
 				case "cryptad":
-					file.append("Source: \"cryptad.jar\"; DestDir: \"{app}\"; Flags: ignoreversion; AfterInstall: FreenetJarDoAfterInstall\r\n"); break;
+					file.append("Source: \"cryptad.jar\"; DestDir: \"{app}\"; Flags: ignoreversion; AfterInstall: CryptadJarDoAfterInstall\r\n"); break;
 				case "freenet-ext":
-					file.append("Source: \"${dep.getFile()}\"; DestDir: \"{app}\"; DestName: \"freenet-ext.jar\"; Flags: ignoreversion; AfterInstall: FreenetJarDoAfterInstall\r\n"); break;
+					file.append("Source: \"${dep.getFile()}\"; DestDir: \"{app}\"; DestName: \"freenet-ext.jar\"; Flags: ignoreversion\r\n"); break;
 				default:
 					file.append("Source: \"${dep.getFile()}\"; DestDir: \"{app}\"; Flags: ignoreversion;\r\n"); break;
 			}			
