@@ -5,7 +5,7 @@
 #include "cryptad_version.iss"
 #define AppPublisher "crypta.network"
 #define AppURL "https://crypta.network/"
-#define AppExeName "CryptaTray.exe"
+#define AppExeName "FreenetTray.exe"
 
 [Setup]
 ; NOTE: The value of AppId uniquely identifies this application.
@@ -21,7 +21,7 @@ AppUpdatesURL={#AppURL}
 DefaultDirName={localappdata}\{#AppName}
 DefaultGroupName={#AppName}
 OutputBaseFilename=CryptaInstaller
-SetupIconFile=FreenetInstaller_InnoSetup.ico
+SetupIconFile=CryptaInstaller_InnoSetup.ico
 SolidCompression=yes
 PrivilegesRequired=lowest
 WizardImageFile=Wizard_FreenetInstall.bmp
@@ -37,27 +37,7 @@ AllowNoIcons=yes
 SetupMutex=SetupMutex{#SetupSetting("AppId")}
 
 [Languages]
-Name: "english"; MessagesFile: "compiler:Default.isl,.\translations\Messages_en.isl"
-Name: "french"; MessagesFile: "compiler:Languages\French.isl,.\translations\Messages_fr.isl"
-Name: "spanish"; MessagesFile: "compiler:Languages\Spanish.isl,.\translations\Messages_es.isl"
-Name: "dutch"; MessagesFile: "compiler:Languages\Dutch.isl,.\translations\Messages_nl.isl"
-Name: "russian"; MessagesFile: "compiler:Languages\Russian.isl,.\translations\Messages_ru.isl"
-Name: "hungarian"; MessagesFile: ".\unofficial\Hungarian.isl,.\translations\Messages_hu.isl"
-Name: "finnish"; MessagesFile: "compiler:Languages\Finnish.isl,.\translations\Messages_fi.isl"
-Name: "czech"; MessagesFile: "compiler:Languages\Czech.isl,.\translations\Messages_cs.isl"
-Name: "german"; MessagesFile: "compiler:Languages\German.isl,.\translations\Messages_de.isl"
-Name: "greek"; MessagesFile: ".\unofficial\Greek.isl,.\translations\Messages_el.isl"
-Name: "indonesian"; MessagesFile: ".\unofficial\Indonesian.isl,.\translations\Messages_id_ID.isl"
-Name: "italian"; MessagesFile: "compiler:Languages\Italian.isl,.\translations\Messages_it.isl"
-Name: "polish"; MessagesFile: "compiler:Languages\Polish.isl,.\translations\Messages_pl.isl"
-Name: "brazilian_portuguese"; MessagesFile: "compiler:Languages\BrazilianPortuguese.isl,.\translations\Messages_pt_BR.isl"
-Name: "simplified_chinese"; MessagesFile: ".\unofficial\ChineseSimplified.isl,.\translations\Messages_zh_CN.isl"
-Name: "portuguese_portugal"; MessagesFile: "compiler:Languages\Portuguese.isl,.\translations\Messages_pt_PT.isl"
-Name: "serbian"; MessagesFile: ".\unofficial\SerbianCyrillic.isl,.\translations\Messages_sr.isl"
-Name: "bulgarian"; MessagesFile: ".\unofficial\Bulgarian.isl,.\translations\Messages_bg.isl"
-Name: "croatian"; MessagesFile: ".\unofficial\Croatian.isl,.\translations\Messages_hr.isl"
-Name: "japanese"; MessagesFile: "compiler:Languages\Japanese.isl,.\translations\Messages_ja.isl"
-Name: "traditional_chinese"; MessagesFile: ".\unofficial\ChineseTraditional.isl,.\translations\Messages_zh_TW.isl"
+Name: "english"; MessagesFile: "compiler:Default.isl,.\translations\Messages_en_utf8.isl"
 
 [Files]
 // this is used to copy wrapper.conf to wrapper.conf.old before overwriting the file when updating the node.
@@ -65,11 +45,11 @@ Name: "traditional_chinese"; MessagesFile: ".\unofficial\ChineseTraditional.isl,
 Source: "{app}\wrapper\wrapper.conf"; DestDir: "{app}\wrapper"; DestName: "wrapper.conf.old"; Flags: external skipifsourcedoesntexist
 
 [Files]
-Source: "FreenetInstaller_InnoSetup_library\FreenetInstaller_InnoSetup_library.dll"; DestDir: "{tmp}"; Flags: ignoreversion dontcopy
+Source: "CryptaInstaller_InnoSetup_library\CryptaInstaller_InnoSetup_library.dll"; DestDir: "{tmp}"; Flags: ignoreversion dontcopy
 Source: "install_bundle\OpenJDK11U-jre_x86-32_windows_hotspot_11.0.15_10.msi"; DestDir: "{tmp}"; Flags: ignoreversion dontcopy nocompression
 Source: "install_bundle\OpenJDK11U-jre_x64_windows_hotspot_11.0.15_10.msi"; DestDir: "{tmp}"; Flags: ignoreversion dontcopy nocompression
 Source: "install_bundle\dotNetFx40_Full_setup.exe"; DestDir: "{tmp}"; Flags: ignoreversion dontcopy nocompression
-#include "fred_deps.iss"
+#include "cryptad_deps.iss"
 Source: "install_node\FreenetTray.exe"; DestDir: "{app}"; Flags: ignoreversion nocompression
 Source: "install_node\FreenetTray.exe.config"; DestDir: "{app}"; Flags: ignoreversion
 Source: "install_node\freenet.ico"; DestDir: "{app}"; Flags: ignoreversion
@@ -104,7 +84,7 @@ Name: "quicklaunchicon"; Description: "{cm:CreateQuickLaunchIcon}"; GroupDescrip
 [Icons]
 Name: "{group}\{#AppName}"; Filename: "{app}\{#AppExeName}"
 Name: "{group}\{cm:UninstallProgram,{#AppName}}"; Filename: "{uninstallexe}"
-Name: "{commondesktop}\{#AppName}"; Filename: "{app}\{#AppExeName}"; Tasks: desktopicon
+Name: "{autodesktop}\{#AppName}"; Filename: "{app}\{#AppExeName}"; Tasks: desktopicon
 Name: "{userappdata}\Microsoft\Internet Explorer\Quick Launch\{#AppName}"; Filename: "{app}\{#AppExeName}"; Tasks: quicklaunchicon
 
 [Run]
@@ -134,10 +114,10 @@ var
   sWrapperJavaMaxMemory, sFproxyPort, sFcpPort :string;
 
 function IsPortAvailable(sIpAddress: ansistring; wPort: word): boolean;
-external 'fIsPortAvailable@files:FreenetInstaller_InnoSetup_library.dll stdcall setuponly';
+external 'fIsPortAvailable@files:CryptaInstaller_InnoSetup_library.dll stdcall setuponly';
 
 function MemoryTotalPhys(var NodeMaxMem: integer): boolean;
-external 'fMemoryTotalPhys@files:FreenetInstaller_InnoSetup_library.dll stdcall setuponly';
+external 'fMemoryTotalPhys@files:CryptaInstaller_InnoSetup_library.dll stdcall setuponly';
 
 function CreateDependencyPage(Name, MissingKey: string; InstallClickHandler: TNotifyEvent) : TDependencyPage; Forward;
 
@@ -227,7 +207,7 @@ begin
   begin
     if RegQueryStringValue(RegistryLocationRootKey, RegKey, 'InstallLocation', ExistingInstallationPath) then
     begin
-      case MsgBox(CustomMessage('ErrorFreenetAlreadyInstalled'), mbError, MB_YESNO) of
+      case MsgBox(CustomMessage('ErrorCryptaAlreadyInstalled'), mbError, MB_YESNO) of
         IDYES:
         begin
           result := True;

@@ -7,11 +7,11 @@ repositories {
 }
 
 dependencies {
-    api project(':fred')
+    api project(':cryptad')
 }
 
 import org.gradle.nativeplatform.platform.internal.DefaultNativePlatform
-def fredversion
+def cryptadversion
 task buildInfo {
     try {
         def gitcmd = "git"
@@ -19,10 +19,11 @@ task buildInfo {
             gitcmd = "C:\\Program Files\\Git\\bin\\git.exe"
         }
         def cmd = "${gitcmd} describe --always --abbrev=4 --dirty"
-	def proc = cmd.execute(null, new File("fred"))
-	fredversion = proc.text.trim().substring(6,10)
+	def proc = cmd.execute(null, project.file("cryptad"))
+	cryptadversion = proc.text.trim()
+	println "Cryptad version: ${cryptadversion}"
     } catch (java.io.IOException e) {
-        fredversion = "@unknown@"
+        cryptadversion = "@unknown@"
     }
 }
 
@@ -31,20 +32,24 @@ task unzip {
 
 task updateSetupFile {
 	doLast {
-		def file = new File("fred_version.iss")
-		file.write("#define AppVersion \"0.7.5 build ${fredversion}\"\r\n")
+		def file = project.file("cryptad_version.iss")
+		file.delete()
+		file.write("#define AppVersion \"0.7.5 build ${cryptadversion}\"\r\n")
 
-		file = new File("fred_deps.iss")
+		file = project.file("cryptad_deps.iss")
 		file.delete()
 		configurations.runtimeClasspath.resolvedConfiguration.resolvedArtifacts.each {
-			dep -> switch(dep.getName()) {
-				case "freenet":
-					file.append("Source: \"freenet.jar\"; DestDir: \"{app}\"; Flags: ignoreversion; AfterInstall: FreenetJarDoAfterInstall\r\n"); break;
+			dep -> 
+			println "Processing dependency: ${dep.getName()}"
+			
+			switch(dep.getName()) {
+				case "cryptad":
+					file.append("Source: \"cryptad.jar\"; DestDir: \"{app}\"; Flags: ignoreversion; AfterInstall: FreenetJarDoAfterInstall\r\n"); break;
 				case "freenet-ext":
 					file.append("Source: \"${dep.getFile()}\"; DestDir: \"{app}\"; DestName: \"freenet-ext.jar\"; Flags: ignoreversion; AfterInstall: FreenetJarDoAfterInstall\r\n"); break;
 				default:
 					file.append("Source: \"${dep.getFile()}\"; DestDir: \"{app}\"; Flags: ignoreversion;\r\n"); break;
-			}
+			}			
 		} 
 	}
 }
