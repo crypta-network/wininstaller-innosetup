@@ -48,8 +48,28 @@ task updateSetupFile {
 				case "freenet-ext":
 					file.append("Source: \"${dep.getFile()}\"; DestDir: \"{app}\"; DestName: \"freenet-ext.jar\"; Flags: ignoreversion\r\n"); break;
 				default:
-					file.append("Source: \"${dep.getFile()}\"; DestDir: \"{app}\"; Flags: ignoreversion;\r\n"); break;
+					file.append("Source: \"${dep.getFile()}\"; DestDir: \"{app}\\libs\"; DestName: \"${stripVersionFromJar(dep.getFile().toString())}\"; Flags: ignoreversion;\r\n"); break;
 			}			
 		} 
 	}
 }
+
+/**
+ * Removes version and qualifier from a jar filename.
+ * Examples:
+ *   'jna-platform-5.17.0.jar'           → 'jna-platform.jar'
+ *   'unbescape-1.1.6.RELEASE.jar'       → 'unbescape.jar'
+ *   'foo-bar-2.0.0-RC1.jar'             → 'foo-bar.jar'
+ *   'baz-3.4.5_SNAPSHOT.jar'            → 'baz.jar'
+ */
+String stripVersionFromJar(String fullPath) {
+    String fileName = new File(fullPath).name
+    // Regex explanation below
+    def pattern = ~/^(.*?)-\d+(?:\.\d+)*(?:[._-]?(?:RELEASE|SNAPSHOT|RC\d*|M\d*|GA|FINAL|[A-Za-z]+))*\.jar$/
+    def matcher = fileName =~ pattern
+    if (matcher.matches()) {
+        return "${matcher[0][1]}.jar"
+    }
+    return fileName
+}
+
