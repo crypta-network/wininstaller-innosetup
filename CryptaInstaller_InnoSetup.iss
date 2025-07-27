@@ -26,8 +26,8 @@ UninstallDisplayIcon={app}\CryptaInstaller_InnoSetup_Uninstall.ico
 UninstallDisplayName={#AppName}
 SolidCompression=yes
 PrivilegesRequired=lowest
-WizardImageFile=resources\Wizard_FreenetInstall.bmp
-WizardSmallImageFile=resources\blue_bunny_package.bmp
+WizardImageFile=resources\Wizard_CryptaInstall.bmp
+WizardSmallImageFile=resources\Wizard_CryptaInstall_Small.bmp
 ;Space needed 650 Mo
 ExtraDiskSpaceRequired=681574400
 Compression=lzma2/ultra
