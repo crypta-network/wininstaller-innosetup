@@ -19,8 +19,9 @@ task buildInfo {
             gitcmd = "C:\\Program Files\\Git\\bin\\git.exe"
         }
         def cmd = "${gitcmd} describe --always --abbrev=4 --dirty"
-	def proc = cmd.execute(null, new File("cryptad"))
-	cryptadversion = proc.text.trim().substring(6,10)
+	def proc = cmd.execute(null, project.file("cryptad"))
+	cryptadversion = proc.text.trim()
+	println "Cryptad version: ${cryptadversion}"
     } catch (java.io.IOException e) {
         cryptadversion = "@unknown@"
     }
@@ -39,16 +40,16 @@ task updateSetupFile {
 		file.delete()
 		configurations.runtimeClasspath.resolvedConfiguration.resolvedArtifacts.each {
 			dep -> 
-								println "Processing dependency: ${dep.getName()}"
-switch(dep.getName()) {
+			println "Processing dependency: ${dep.getName()}"
+			
+			switch(dep.getName()) {
 				case "cryptad":
 					file.append("Source: \"cryptad.jar\"; DestDir: \"{app}\"; Flags: ignoreversion; AfterInstall: FreenetJarDoAfterInstall\r\n"); break;
 				case "freenet-ext":
 					file.append("Source: \"${dep.getFile()}\"; DestDir: \"{app}\"; DestName: \"freenet-ext.jar\"; Flags: ignoreversion; AfterInstall: FreenetJarDoAfterInstall\r\n"); break;
 				default:
 					file.append("Source: \"${dep.getFile()}\"; DestDir: \"{app}\"; Flags: ignoreversion;\r\n"); break;
-			}
-			
+			}			
 		} 
 	}
 }
