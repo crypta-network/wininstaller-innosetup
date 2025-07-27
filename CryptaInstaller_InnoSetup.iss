@@ -11,7 +11,7 @@
 ; NOTE: The value of AppId uniquely identifies this application.
 ; Do not use the same AppId value in installers for other applications.
 ; (To generate a new GUID, click Tools | Generate GUID inside the IDE.)
-AppId={{3196C62F-9C7B-4392-88B4-05C037D05518}
+AppId={{FDB7C786-8205-4D04-A6B2-4159119EC892}
 AppName={#AppName}
 AppVersion={#AppVersion}
 AppPublisher={#AppPublisher}
@@ -100,9 +100,6 @@ Type: filesandordirs; Name: "{localappdata}\FreenetTray"
 
 [Registry]
 Root: "HKCU"; Subkey: "SOFTWARE\Microsoft\Windows\CurrentVersion\Run"; ValueType: string; ValueName: "Freenet"; ValueData: """{app}\{#AppExeName}"""; Flags: uninsdeletevalue
-
-[ThirdParty]
-UseRelativePaths=True
 
 [Code]
 type
