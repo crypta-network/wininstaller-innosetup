@@ -5,7 +5,7 @@
 #include "cryptad_version.iss"
 #define AppPublisher "crypta.network"
 #define AppURL "https://crypta.network/"
-#define AppExeName "FreenetTray.exe"
+#define AppExeName "CryptaTray.exe"
 
 [Setup]
 ; NOTE: The value of AppId uniquely identifies this application.
@@ -37,6 +37,11 @@ AllowUNCPath=False
 AllowNoIcons=yes
 ;Prevent installer from being run multiple times in parallel
 SetupMutex=SetupMutex{#SetupSetting("AppId")}
+; Only allow running on 64‑bit Windows, and enable 64‑bit install mode
+ArchitecturesAllowed=x64compatible
+ArchitecturesInstallIn64BitMode=x64compatible
+; Require Windows 10 or newer (any build)
+MinVersion=10.0
 
 [Languages]
 Name: "english"; MessagesFile: "compiler:Default.isl,.\translations\Messages_en_utf8.isl"
@@ -48,19 +53,16 @@ Source: "{app}\wrapper\wrapper.conf"; DestDir: "{app}\wrapper"; DestName: "wrapp
 
 [Files]
 Source: "CryptaInstaller_InnoSetup_library\CryptaInstaller_InnoSetup_library.dll"; DestDir: "{tmp}"; Flags: ignoreversion dontcopy
-Source: "install_bundle\OpenJDK11U-jre_x86-32_windows_hotspot_11.0.15_10.msi"; DestDir: "{tmp}"; Flags: ignoreversion dontcopy nocompression
-Source: "install_bundle\OpenJDK11U-jre_x64_windows_hotspot_11.0.15_10.msi"; DestDir: "{tmp}"; Flags: ignoreversion dontcopy nocompression
-Source: "install_bundle\dotNetFx40_Full_setup.exe"; DestDir: "{tmp}"; Flags: ignoreversion dontcopy nocompression
+Source: "install_bundle\OpenJDK21U-jre_x64_windows_hotspot_21.0.8_9.msi"; DestDir: "{tmp}"; Flags: ignoreversion dontcopy nocompression
+Source: "install_bundle\windowsdesktop-runtime-9.0.7-win-x64.exe"; DestDir: "{tmp}"; Flags: ignoreversion dontcopy nocompression
 #include "cryptad_deps.iss"
-Source: "install_node\FreenetTray.exe"; DestDir: "{app}"; Flags: ignoreversion nocompression
-Source: "install_node\FreenetTray.exe.config"; DestDir: "{app}"; Flags: ignoreversion
-Source: "install_node\freenet.ico"; DestDir: "{app}"; Flags: ignoreversion
-Source: "install_node\freenetoffline.ico"; DestDir: "{app}"; Flags: ignoreversion
+Source: "install_node\CryptaTray.exe"; DestDir: "{app}"; Flags: ignoreversion nocompression
+Source: "install_node\CryptaTray.dll.config"; DestDir: "{app}"; Flags: ignoreversion
 Source: "install_node\README.txt"; DestDir: "{app}"; Flags: ignoreversion
 Source: "install_node\seednodes.fref"; DestDir: "{app}"; Flags: ignoreversion
 Source: "install_node\installid.dat"; DestDir: "{app}"; Flags: ignoreversion
 Source: "install_node\installlayout.dat"; DestDir: "{app}"; Flags: ignoreversion
-Source: "install_node\licenses\LICENSE.Freenet"; DestDir: "{app}\licenses"; Flags: ignoreversion
+Source: "install_node\licenses\LICENSE.Crypta"; DestDir: "{app}\licenses"; Flags: ignoreversion
 Source: "install_node\licenses\LICENSE.Mantissa"; DestDir: "{app}\licenses"; Flags: ignoreversion
 Source: "install_node\plugins\JSTUN.jar"; DestDir: "{app}\plugins"; Flags: ignoreversion
 Source: "install_node\plugins\KeyUtils.jar"; DestDir: "{app}\plugins"; Flags: ignoreversion
@@ -72,23 +74,19 @@ Source: "install_node\updater\sha1test.jar"; DestDir: "{app}\updater"; Flags: ig
 Source: "install_node\updater\startssl.pem"; DestDir: "{app}\updater"; Flags: ignoreversion
 Source: "install_node\updater\update.cmd"; DestDir: "{app}\updater"; Flags: ignoreversion
 Source: "install_node\updater\wget.exe"; DestDir: "{app}\updater"; Flags: ignoreversion
-Source: "install_node\wrapper\freenetwrapper.exe"; DestDir: "{app}\wrapper"; Flags: ignoreversion nocompression
-Source: "install_node\wrapper\freenetwrapper-64.exe"; DestDir: "{app}\wrapper"; Flags: ignoreversion nocompression
+Source: "install_node\wrapper\cryptawrapper-64.exe"; DestDir: "{app}\wrapper"; Flags: ignoreversion nocompression
 Source: "install_node\wrapper\wrapper.jar"; DestDir: "{app}\wrapper"; Flags: ignoreversion
-Source: "install_node\wrapper\wrapper-windows-x86-32.dll"; DestDir: "{app}\wrapper"; Flags: ignoreversion
 Source: "install_node\wrapper\wrapper-windows-x86-64.dll"; DestDir: "{app}\wrapper"; Flags: ignoreversion
 Source: "install_node\wrapper\wrapper.conf"; DestDir: "{app}\wrapper"; Flags: ignoreversion; AfterInstall: WrapperConfDoAfterInstall
 Source: "resources\CryptaInstaller_InnoSetup_Uninstall.ico"; DestDir: "{app}"; Flags: ignoreversion
 
 [Tasks]
 Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{cm:AdditionalIcons}"; Flags: unchecked
-Name: "quicklaunchicon"; Description: "{cm:CreateQuickLaunchIcon}"; GroupDescription: "{cm:AdditionalIcons}"; Flags: unchecked; OnlyBelowVersion: 0,6.1
 
 [Icons]
 Name: "{group}\{#AppName}"; Filename: "{app}\{#AppExeName}"
 Name: "{group}\{cm:UninstallProgram,{#AppName}}"; Filename: "{uninstallexe}"
 Name: "{autodesktop}\{#AppName}"; Filename: "{app}\{#AppExeName}"; Tasks: desktopicon
-Name: "{userappdata}\Microsoft\Internet Explorer\Quick Launch\{#AppName}"; Filename: "{app}\{#AppExeName}"; Tasks: quicklaunchicon
 
 [Run]
 Filename: "{app}\{#AppExeName}"; Parameters: "-welcome"; Flags: nowait postinstall skipifsilent; Description: "{cm:LaunchProgram,{#StringChange(AppName, '&', '&&')}}"
@@ -96,10 +94,10 @@ Filename: "{app}\{#AppExeName}"; Parameters: "-welcome"; Flags: nowait postinsta
 [UninstallDelete]
 ; TODO: See http://www.jrsoftware.org/ishelp/index.php?topic=uninstalldeletesection - this should enumerate expected files instead of complete wildcard.
 Type: filesandordirs; Name: "{app}\*"
-Type: filesandordirs; Name: "{localappdata}\FreenetTray"
+Type: filesandordirs; Name: "{localappdata}\CryptaTray"
 
 [Registry]
-Root: "HKCU"; Subkey: "SOFTWARE\Microsoft\Windows\CurrentVersion\Run"; ValueType: string; ValueName: "Freenet"; ValueData: """{app}\{#AppExeName}"""; Flags: uninsdeletevalue
+Root: "HKCU"; Subkey: "SOFTWARE\Microsoft\Windows\CurrentVersion\Run"; ValueType: string; ValueName: "CryptaTray"; ValueData: """{app}\{#AppExeName}"""; Flags: uninsdeletevalue
 
 [Code]
 type
@@ -126,7 +124,7 @@ var
 ErrorCode : Integer;
 sErrorCode: string;
 begin
-  if not ShellExec('', 'https://freenetproject.org/support', '', '', SW_SHOW, ewWaitUntilIdle, ErrorCode) then 
+  if not ShellExec('', 'https://github.com/crypta-network', '', '', SW_SHOW, ewWaitUntilIdle, ErrorCode) then 
     begin
       sErrorCode := inttostr(ErrorCode);
       MsgBox(FmtMessage(CustomMessage('ErrorLaunchBrowser'), [sErrorCode, SysErrorMessage(ErrorCode)]), mbError, MB_OK);
@@ -167,7 +165,7 @@ sErrorCode: string;
 begin
   result := true;
 
-  if not ShellExec('', Format('%s\FreenetTray.exe', [InstallationPath]), '-welcome', '', SW_SHOW, ewWaitUntilIdle, ErrorCode) then 
+  if not ShellExec('', Format('%s\CryptaTray.exe', [InstallationPath]), '-welcome', '', SW_SHOW, ewWaitUntilIdle, ErrorCode) then 
   begin
     ExistingInstallationDamaged();
   end;
@@ -213,7 +211,7 @@ begin
           result := True;
 
           // Don't use outdated script - instead just overwrite installation
-          // Installer will warn if "FreenetTray.exe", "OpenJDK Platform binary" or "Java Service Wrapper Community Edition" are running
+          // Installer will warn if "CryptaTray.exe", "OpenJDK Platform binary" or "Java Service Wrapper Community Edition" are running
           //OpenUpdateScript(ExistingInstallationPath);
         end;
         IDNO:
@@ -236,35 +234,35 @@ begin
   Result := False;
   // the installer is a 32-bit process, so we need to explicitly 
   // check the 64-bit registry view to find out if a 64-bit JVM is installed
-  // then also check for 32-bit JVM.
-  // 'JavaVersion' does not change, if nothing was found.
-  RegQueryStringValue(HKLM64, 'SOFTWARE\JavaSoft\Java Runtime Environment', 'CurrentVersion', JavaVersion)
   RegQueryStringValue(HKLM64, 'SOFTWARE\JavaSoft\JRE', 'CurrentVersion', JavaVersion)
-  RegQueryStringValue(HKLM, 'SOFTWARE\JavaSoft\Java Runtime Environment', 'CurrentVersion', JavaVersion)
-  RegQueryStringValue(HKLM, 'SOFTWARE\JavaSoft\JRE', 'CurrentVersion', JavaVersion)
-
-  RegQueryStringValue(HKLM64, 'SOFTWARE\JavaSoft\Java Development Kit', 'CurrentVersion', JavaVersion)
   RegQueryStringValue(HKLM64, 'SOFTWARE\JavaSoft\JDK', 'CurrentVersion', JavaVersion)
-  RegQueryStringValue(HKLM, 'SOFTWARE\JavaSoft\Java Development Kit', 'CurrentVersion', JavaVersion)
-  RegQueryStringValue(HKLM, 'SOFTWARE\JavaSoft\JDK', 'CurrentVersion', JavaVersion)
   
-    if CompareStr(JavaVersion,'1.9') >= 0  then
-      Result := True;
-
-  if not Result then begin
-    // Fallback, check if java.exe in PATH
-    Result := ShellExec('', 'java', '', '', SW_HIDE, ewWaitUntilIdle, ErrorCode);
-  end;
+  if CompareStr(JavaVersion,'21') >= 0  then
+    Result := True;
 end;
 
 function IsNetInstalled() : boolean;
 var
-  NetVersion : string;
+  FindRec: TFindRec;
+  FolderPath: String;
 begin
-// TODO: is this correct by accident? As the installer is a 32-bit process, if .NET installers always put a registry key 
-// in the 32-bit registery view on a 64-bit machine this will always work. If not it may break on some machines, or on all
-// machines in the future if that changes
-  Result := RegQueryStringValue(HKLM, 'SOFTWARE\Microsoft\NET Framework Setup\NDP\v4\Full', 'Version', NetVersion);
+  FolderPath := ExpandConstant('{pf}\dotnet\shared\Microsoft.WindowsDesktop.App\*');
+  Result := False;
+  if FindFirst(FolderPath, FindRec) then
+  begin
+    try
+      repeat
+        // look for a "9.x.y..." folder
+        if Copy(FindRec.Name, 1, 2) = '9.' then
+        begin
+          Result := True;
+          Break;
+        end;
+      until not FindNext(FindRec);
+    finally
+      FindClose(FindRec);
+    end;
+  end;
 end;
 
 procedure ButtonInstallJavaOnClick(Sender: TObject);
@@ -276,13 +274,9 @@ var
 begin
   ButtonInstallJava := TNewButton (Sender);
   ButtonInstallJava.Enabled := False;
-  if (isWin64()) then begin
-    sJavaInstaller := '{tmp}\OpenJDK11U-jre_x64_windows_hotspot_11.0.15_10.msi';
-  end else begin
-    sJavaInstaller := '{tmp}\OpenJDK11U-jre_x86-32_windows_hotspot_11.0.15_10.msi';
-  end;
+  sJavaInstaller := '{tmp}\OpenJDK21U-jre_x64_windows_hotspot_21.0.8_9.msi';
   ExtractTemporaryFiles(sJavaInstaller);
-  if not ShellExec('',ExpandConstant(sJavaInstaller),'ADDLOCAL=FeatureMain,FeatureEnvironment,FeatureJarFileRunWith,FeatureOracleJavaSoft','',SW_SHOW,ewWaitUntilTerminated,ErrorCode) then begin
+  if not ShellExec('',ExpandConstant(sJavaInstaller),'ADDLOCAL=FeatureMain,FeatureEnvironment,FeatureJarFileRunWith,FeatureOracleJavaSoft INSTALLDIR="C:\Program Files\Eclipse Adoptium\jre-21.0.8.9-hotspot" /passive','',SW_SHOWNORMAL,ewWaitUntilTerminated,ErrorCode) then begin
     sErrorCode := inttostr(ErrorCode);
     MsgBox(FmtMessage(CustomMessage('ErrorLaunchDependencyInstaller'), ['Java', sErrorCode,SysErrorMessage(ErrorCode)]), mbError, MB_OK)
     ButtonInstallJava.Enabled := True;
@@ -303,16 +297,16 @@ var
 begin
   InstallButton := TNewButton (Sender);
   InstallButton.Enabled := False;
-  ExtractTemporaryFiles('{tmp}\dotNetFx40_Full_setup.exe');
-  if not ShellExec('runas', ExpandConstant('{tmp}\dotNetFx40_Full_setup.exe'), '', '', SW_SHOW, ewWaitUntilTerminated,ErrorCode) then begin
-    MsgBox(FmtMessage(CustomMessage('ErrorLaunchDependencyInstaller'), ['.NET 4.0', inttostr(ErrorCode), SysErrorMessage(ErrorCode)]),
+  ExtractTemporaryFiles('{tmp}\windowsdesktop-runtime-9.0.7-win-x64.exe');
+  if not ShellExec('runas', ExpandConstant('{tmp}\windowsdesktop-runtime-9.0.7-win-x64.exe'), '/qn', '', SW_SHOW, ewWaitUntilTerminated,ErrorCode) then begin
+    MsgBox(FmtMessage(CustomMessage('ErrorLaunchDependencyInstaller'), ['.NET 9.0', inttostr(ErrorCode), SysErrorMessage(ErrorCode)]),
            mbError, MB_OK);
     InstallButton.Enabled := True;
   end else begin
     InstallButton.Enabled := True;
     if IsNetInstalled() then begin
       InstallButton.Visible := False;
-      NetDependency.Explanation.Caption := FmtMessage(CustomMessage('DependencyInstalled'), ['.NET 4.0']);
+      NetDependency.Explanation.Caption := FmtMessage(CustomMessage('DependencyInstalled'), ['.NET 9.0']);
       WizardForm.NextButton.Enabled :=  True;
     end;
   end;
