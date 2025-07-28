@@ -96,6 +96,11 @@ Filename: "{app}\{#AppExeName}"; Parameters: "-welcome"; Flags: nowait postinsta
 Type: filesandordirs; Name: "{app}\*"
 Type: filesandordirs; Name: "{localappdata}\CryptaTray"
 
+[UninstallRun]
+Filename: "{cmd}"; \
+Parameters: "/C ""taskkill /im CryptaTray.exe"""; \
+Flags: runhidden
+
 [Registry]
 Root: "HKCU"; Subkey: "SOFTWARE\Microsoft\Windows\CurrentVersion\Run"; ValueType: string; ValueName: "CryptaTray"; ValueData: """{app}\{#AppExeName}"""; Flags: uninsdeletevalue
 
