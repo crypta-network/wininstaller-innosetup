@@ -1,8 +1,8 @@
 ﻿[CustomMessages]
 DependencyMissingPageCaption=Crypta requirements
 DependencyMissingPageDescription=%1 dependency
-JavaMissingText=Crypta requires the Java Runtime Environment, but your system does not appear to have an up-to-date version installed. You can install Java by using the included installer, which will install the necessary files automatically.
-NetMissingText=Crypta requires .NET 3.5, but your system does not have it. The button below will download and install it.
+JavaMissingText=Crypta requires the Java Runtime Environment 21, but your system does not appear to have an up-to-date version installed. You can install Java by using the included installer, which will install the necessary files automatically.
+NetMissingText=Crypta requires .NET 9.0, but your system does not have it. The button below will download and install it.
 ButtonInstallDependency=Install %1
 DependencyInstalled=%1 has been installed on your system.
 ErrorLaunchDependencyInstaller=Can't launch %1 installer.%n%nError (%2): %3.
