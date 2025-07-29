@@ -99,7 +99,8 @@ Type: filesandordirs; Name: "{localappdata}\CryptaTray"
 [UninstallRun]
 Filename: "{cmd}"; \
 Parameters: "/C ""taskkill /im CryptaTray.exe"""; \
-Flags: runhidden
+Flags: runhidden; \
+RunOnceId: "QuitCryptaTray"
 
 [Registry]
 Root: "HKCU"; Subkey: "SOFTWARE\Microsoft\Windows\CurrentVersion\Run"; ValueType: string; ValueName: "CryptaTray"; ValueData: """{app}\{#AppExeName}"""; Flags: uninsdeletevalue
@@ -249,19 +250,26 @@ end;
 function IsNetInstalled() : boolean;
 var
   FindRec: TFindRec;
-  FolderPath: String;
+  BasePaths: array of string;
+  PathTemplate: string;
+  I: Integer;
 begin
-  FolderPath := ExpandConstant('{pf}\dotnet\shared\Microsoft.WindowsDesktop.App\*');
+  // Define both the normal and x64-on-Arm install roots
+  SetArrayLength(BasePaths, 2);
+  BasePaths[0] := '{pf}\dotnet\shared\Microsoft.WindowsDesktop.App\*';
+  BasePaths[1] := '{pf}\dotnet\x64\shared\Microsoft.WindowsDesktop.App\*';
   Result := False;
-  if FindFirst(FolderPath, FindRec) then
+
+  // Loop by index rather than 'for ... in'
+  for I := 0 to GetArrayLength(BasePaths) - 1 do
   begin
+    if FindFirst(ExpandConstant(BasePaths[I]), FindRec) then
     try
       repeat
-        // look for a "9.x.y..." folder
         if Copy(FindRec.Name, 1, 2) = '9.' then
         begin
           Result := True;
-          Break;
+          Exit;
         end;
       until not FindNext(FindRec);
     finally
@@ -281,7 +289,7 @@ begin
   ButtonInstallJava.Enabled := False;
   sJavaInstaller := '{tmp}\OpenJDK21U-jre_x64_windows_hotspot_21.0.8_9.msi';
   ExtractTemporaryFiles(sJavaInstaller);
-  if not ShellExec('',ExpandConstant(sJavaInstaller),'ADDLOCAL=FeatureMain,FeatureEnvironment,FeatureJarFileRunWith,FeatureOracleJavaSoft INSTALLDIR="C:\Program Files\Eclipse Adoptium\jre-21.0.8.9-hotspot" /passive','',SW_SHOWNORMAL,ewWaitUntilTerminated,ErrorCode) then begin
+  if not ShellExec('',ExpandConstant(sJavaInstaller),'ADDLOCAL=FeatureMain,FeatureEnvironment,FeatureJarFileRunWith,FeatureOracleJavaSoft INSTALLDIR="C:\Program Files\Eclipse Adoptium\jre-21.0.8.9-hotspot" /passive /noeresart','',SW_SHOWNORMAL,ewWaitUntilTerminated,ErrorCode) then begin
     sErrorCode := inttostr(ErrorCode);
     MsgBox(FmtMessage(CustomMessage('ErrorLaunchDependencyInstaller'), ['Java', sErrorCode,SysErrorMessage(ErrorCode)]), mbError, MB_OK)
     ButtonInstallJava.Enabled := True;
@@ -303,7 +311,7 @@ begin
   InstallButton := TNewButton (Sender);
   InstallButton.Enabled := False;
   ExtractTemporaryFiles('{tmp}\windowsdesktop-runtime-9.0.7-win-x64.exe');
-  if not ShellExec('runas', ExpandConstant('{tmp}\windowsdesktop-runtime-9.0.7-win-x64.exe'), '/qn', '', SW_SHOW, ewWaitUntilTerminated,ErrorCode) then begin
+  if not ShellExec('runas', ExpandConstant('{tmp}\windowsdesktop-runtime-9.0.7-win-x64.exe'), '/install /passive /noeresart', '', SW_SHOW, ewWaitUntilTerminated,ErrorCode) then begin
     MsgBox(FmtMessage(CustomMessage('ErrorLaunchDependencyInstaller'), ['.NET 9.0', inttostr(ErrorCode), SysErrorMessage(ErrorCode)]),
            mbError, MB_OK);
     InstallButton.Enabled := True;
@@ -346,8 +354,8 @@ procedure InitializeWizard;
 var
   iMemTotalPhys, iWrapperJavaMaxMemory, iFproxyPort, iFcpPort : integer;
 begin
-  JavaDependency := CreateDependencyPage('Java', 'JavaMissingText', @ButtonInstallJavaOnClick);
-  NetDependency := CreateDependencyPage('.NET 4.0', 'NetMissingText', @NetInstallOnClick);
+  JavaDependency := CreateDependencyPage('Java 21', 'JavaMissingText', @ButtonInstallJavaOnClick);
+  NetDependency := CreateDependencyPage('.NET 9.0', 'NetMissingText', @NetInstallOnClick);
 
   iFproxyPort := 8888;
   repeat
