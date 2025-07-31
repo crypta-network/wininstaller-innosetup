@@ -1,9 +1,10 @@
 /Output/
-/fred
-/FreenetInstall_InnoSetup.iss
+/cryptad
+/cryptad.jar
+/build/
 *.swp
 /.gradle
-/fred_deps.iss
-/fred_version.iss
+/cryptad_deps.iss
+/cryptad_version.iss
 *_bin.exe
 .DS_Store
