@@ -37,11 +37,6 @@ jobs:
       RUNTIME_IDENTIFIER: ${{ matrix.os == 'windows-latest' && 'x64' || 'arm64'}}
 
     steps:
-      - name: Update Inno Setup
-        uses: pwall2222/inno-setup-download@v0.0.8
-        with:
-          version: "6.4.3"
-
       - name: Checkout Windows Installer
         uses: actions/checkout@v4
         with:
