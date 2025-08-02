@@ -56,14 +56,14 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           artifact-ids: ${{needs.build-cryptad.outputs.artifact-id}}
-          path: $GITHUB_WORKSPACE\artifacts
+          path: ${{ github.workspace }}\artifacts
           merge-multiple: true
 
       - name: Download built CryptaTray.exe and CryptaTray.dll.config
         uses: actions/download-artifact@v4
         with:
           artifact-ids: ${{fromJSON(needs.build-wintray.outputs.artifact-map)[format('wintray-{0}', env.RUNTIME_IDENTIFIER)]}}
-          path: $GITHUB_WORKSPACE\artifacts
+          path: ${{ github.workspace }}\artifacts
           merge-multiple: true
 
       # The source code of cryptad is required to fetch dependent JAR files
