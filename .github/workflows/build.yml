@@ -56,7 +56,7 @@ jobs:
       - name: Download built CryptaTray.exe and CryptaTray.dll.config
         uses: actions/download-artifact@v4
         with:
-          artifact-ids: ${{needs.build-wintray.outputs.artifact-map['wintray' + env.RUNTIME_IDENTIFIER]}}
+          artifact-ids: ${{needs.build-wintray.outputs.artifact-map[format('wintray_{0}', env.RUNTIME_IDENTIFIER)]}}
 
       # The source code of cryptad is required to fetch dependent JAR files
       - name: Checkout Cryptad source code
