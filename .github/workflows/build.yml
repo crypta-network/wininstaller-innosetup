@@ -84,7 +84,7 @@ jobs:
 
       - name: Building the installer
         run: |
-          "iscc.exe" "CryptaInstall_InnoSetup.iss"
+          "iscc.exe" "CryptaInstaller_InnoSetup.iss"
         shell: cmd
 
       # signing moved to https://github.com/hyphanet/sign-windows-installer
