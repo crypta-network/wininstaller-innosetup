@@ -56,8 +56,8 @@ Source: "CryptaInstaller_InnoSetup_library\CryptaInstaller_InnoSetup_library.dll
 Source: "install_bundle\OpenJDK21U-jre_x64_windows_hotspot_21.0.8_9.msi"; DestDir: "{tmp}"; Flags: ignoreversion dontcopy nocompression
 Source: "install_bundle\windowsdesktop-runtime-9.0.7-win-x64.exe"; DestDir: "{tmp}"; Flags: ignoreversion dontcopy nocompression
 #include "cryptad_deps.iss"
-Source: "CryptaTray.exe"; DestDir: "{app}"; Flags: ignoreversion nocompression
-Source: "CryptaTray.dll.config"; DestDir: "{app}"; Flags: ignoreversion
+Source: "artifacts\CryptaTray.exe"; DestDir: "{app}"; Flags: ignoreversion nocompression
+Source: "artifacts\CryptaTray.dll.config"; DestDir: "{app}"; Flags: ignoreversion
 Source: "install_node\README.txt"; DestDir: "{app}"; Flags: ignoreversion
 Source: "install_node\seednodes.fref"; DestDir: "{app}"; Flags: ignoreversion
 Source: "install_node\installid.dat"; DestDir: "{app}"; Flags: ignoreversion

@@ -11,12 +11,16 @@ on:
         description: Cryptad Wintray git ref
         type: string
         default: master
+      jdk-version:
+        type: string
+        default: "21"
 
 jobs:
   build-cryptad:
     uses: crypta-network/cryptad/.github/workflows/build.yml@next
     with:
       git-ref: ${{ inputs.cryptad-git-ref }}
+      jdk-version: ${{ inputs.jdk-version }}
 
   # Always build HEAD version for now
   build-wintray:
@@ -37,24 +41,33 @@ jobs:
       RUNTIME_IDENTIFIER: ${{ matrix.os == 'windows-latest' && 'x64' || 'arm64'}}
 
     steps:
-      - name: Checkout Windows Installer
+      - name: Set up JDK
+        uses: actions/setup-java@v4
+        with:
+          java-version: ${{ inputs.jdk-version }}
+          distribution: "temurin"
+
+      - name: Checkout windows installer
         uses: actions/checkout@v4
         with:
           repository: crypta-network/wininstaller-innosetup
-          fetch-depth: 0
 
       - name: Download built cryptad.jar
         uses: actions/download-artifact@v4
         with:
           artifact-ids: ${{needs.build-cryptad.outputs.artifact-id}}
+          path: $GITHUB_WORKSPACE\artifacts
+          merge-multiple: true
 
       - name: Download built CryptaTray.exe and CryptaTray.dll.config
         uses: actions/download-artifact@v4
         with:
-          artifact-ids: ${{needs.build-wintray.outputs.artifact-map[format('wintray_{0}', env.RUNTIME_IDENTIFIER)]}}
+          artifact-ids: ${{fromJSON(needs.build-wintray.outputs.artifact-map)[format('wintray-{0}', env.RUNTIME_IDENTIFIER)]}}
+          path: $GITHUB_WORKSPACE\artifacts
+          merge-multiple: true
 
       # The source code of cryptad is required to fetch dependent JAR files
-      - name: Checkout Cryptad source code
+      - name: Checkout cryptad source code
         uses: actions/checkout@v4
         with:
           repository: crypta-network/cryptad
