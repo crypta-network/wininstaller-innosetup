@@ -1,0 +1,106 @@
+name: Build Crypta Installer
+
+on:
+  workflow_dispatch:
+    inputs:
+      cryptad-git-ref:
+        description: Cryptad git ref
+        type: string
+        default: next
+      wintray-git-ref:
+        description: Cryptad Wintray git ref
+        type: string
+        default: master
+
+jobs:
+  build-cryptad:
+    uses: crypta-network/cryptad/actions/workflows/build.yml
+    with:
+      git-ref: ${{ inputs.cryptad-git-ref }}
+
+  # Always build HEAD version for now
+  build-wintray:
+    uses: crypta-network/wintray/actions/workflows/build.yml
+    with:
+      git-ref: ${{ inputs.wintray-git-ref }}
+
+  build:
+    needs: [build-cryptad, build-wintray]
+
+    strategy:
+      matrix:
+        arch: [windows-latest, windows-11-arm]
+
+    runs-on: ${{ matrix.os }}
+
+    env:
+      RUNTIME_IDENTIFIER: ${{ matrix.os == 'windows-latest' && 'x64' || 'arm64'}}
+
+    steps:
+      - name: Update Inno Setup
+        uses: @pwall2222/inno-setup-download
+        with:
+          version: '6.4.3'
+
+      - name: Checkout Windows Installer
+        uses: actions/checkout@v4
+        with:
+          repository: crypta-network/wininstaller-innosetup
+          fetch-depth: 0
+
+      - name: Download built cryptad.jar
+        uses: actions/download-artifact@v4
+        with:
+          artifact-ids: ${{needs.build-cryptad.outputs.artifact-id}}
+
+      - name: Download built CryptaTray.exe and CryptaTray.dll.config
+        uses: actions/download-artifact@v4
+        with:
+          artifact-ids: ${{needs.build-wintray.outputs.artifact-map[env.RUNTIME_IDENTIFIER]}}
+
+      # The source code of cryptad is required to fetch dependent JAR files
+      - name: Checkout Cryptad source code
+        uses: actions/checkout@v4
+        with:
+          repository: crypta-network/cryptad
+          ref: ${{ inputs.cryptad-git-ref }}
+          path: cryptad
+          fetch-depth: 0
+
+      - uses: gradle/actions/wrapper-validation@v4
+
+      - name: Unzip and update setup files
+        run: |
+          .\gradlew.bat unzip
+          .\gradlew.bat updateSetupFile
+
+      - name: Building the installer
+        run: |
+          "iscc.exe" "CryptaInstall_InnoSetup.iss"
+        shell: cmd
+
+      # signing moved to https://github.com/hyphanet/sign-windows-installer
+      #     - name: Sign the installer
+      #       uses: nextgens/authenticode-sign-action@v1.0.1
+      #       if: ${{ github.event_name != 'pull_request' }}
+      #       with:
+      #         certificate: '${{ secrets.CERTIFICATES }}'
+      #         credentials: '${{ secrets.GOOGLE_APPLICATION_CREDENTIALS }}'
+      #         key-uri: "projects/fpi-codesign/locations/europe-west3/keyRings/code-signing/cryptoKeys/certificate/cryptoKeyVersions/1"
+      #         timestamp-url: 'http://timestamp.comodoca.com'
+      #         description: 'Freenet Installer'
+      #         description-url: 'https://freenetproject.org'
+      #         folder: "Output"
+      #         recursive: true
+      #
+      #     - name: Verify the signature
+      #       if: ${{ github.event_name != 'pull_request' }}
+      #       run: call "%programfiles(x86)%/Windows Kits/10/bin/10.0.17763.0/x86/signtool.exe" verify /v /pa "Output/FreenetInstaller.exe"
+      #       shell: cmd
+
+      - name: Upload the installer as an artifact
+        uses: actions/upload-artifact@v4
+        if: ${{ github.event_name != 'pull_request' }}
+        with:
+          path: "Output/CryptaInstaller.exe"
+          name: artifact-${{ env.RUNTIME_IDENTIFIER }}
