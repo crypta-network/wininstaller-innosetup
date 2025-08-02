@@ -14,13 +14,13 @@ on:
 
 jobs:
   build-cryptad:
-    uses: crypta-network/cryptad/.github/workflows/build.yml
+    uses: crypta-network/cryptad/.github/workflows/build.yml@next
     with:
       git-ref: ${{ inputs.cryptad-git-ref }}
 
   # Always build HEAD version for now
   build-wintray:
-    uses: crypta-network/wintray/.github/workflows/build.yml
+    uses: crypta-network/wintray/.github/workflows/build.yml@master
     with:
       git-ref: ${{ inputs.wintray-git-ref }}
 
