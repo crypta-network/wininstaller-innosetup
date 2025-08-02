@@ -38,9 +38,9 @@ jobs:
 
     steps:
       - name: Update Inno Setup
-        uses: @pwall2222/inno-setup-download
+        uses: pwall2222/inno-setup-download
         with:
-          version: '6.4.3'
+          version: "6.4.3"
 
       - name: Checkout Windows Installer
         uses: actions/checkout@v4
