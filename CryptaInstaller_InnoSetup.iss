@@ -257,7 +257,7 @@ begin
   ButtonInstallJava.Enabled := False;
   sJavaInstaller := '{tmp}\jre.msi';
   ExtractTemporaryFiles(sJavaInstaller);
-  if not ShellExec('',ExpandConstant(sJavaInstaller),'ADDLOCAL=FeatureMain,FeatureEnvironment,FeatureJarFileRunWith,FeatureOracleJavaSoft INSTALLDIR="C:\Program Files\Eclipse Adoptium\jre-21.0.8.9-hotspot" /passive /noeresart','',SW_SHOWNORMAL,ewWaitUntilTerminated,ErrorCode) then begin
+  if not ShellExec('',ExpandConstant(sJavaInstaller),'ADDLOCAL=FeatureMain,FeatureEnvironment,FeatureJarFileRunWith,FeatureOracleJavaSoft /passive /norestart','',SW_SHOWNORMAL,ewWaitUntilTerminated,ErrorCode) then begin
     sErrorCode := inttostr(ErrorCode);
     MsgBox(FmtMessage(CustomMessage('ErrorLaunchDependencyInstaller'), ['Java', sErrorCode,SysErrorMessage(ErrorCode)]), mbError, MB_OK)
     ButtonInstallJava.Enabled := True;
