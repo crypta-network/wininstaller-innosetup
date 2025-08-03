@@ -39,7 +39,7 @@ AllowNoIcons=yes
 SetupMutex=SetupMutex{#SetupSetting("AppId")}
 
 #ifndef Arch
-  #define Arch "x64"
+  #define Arch "arm64"
 #endif
 
 #if Arch == "x64"
