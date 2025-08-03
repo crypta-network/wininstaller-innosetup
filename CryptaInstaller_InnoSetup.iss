@@ -53,8 +53,7 @@ Source: "{app}\wrapper\wrapper.conf"; DestDir: "{app}\wrapper"; DestName: "wrapp
 
 [Files]
 Source: "CryptaInstaller_InnoSetup_library\CryptaInstaller_InnoSetup_library.dll"; DestDir: "{tmp}"; Flags: ignoreversion dontcopy
-Source: "install_bundle\OpenJDK21U-jre_x64_windows_hotspot_21.0.8_9.msi"; DestDir: "{tmp}"; Flags: ignoreversion dontcopy nocompression
-Source: "install_bundle\windowsdesktop-runtime-9.0.7-win-x64.exe"; DestDir: "{tmp}"; Flags: ignoreversion dontcopy nocompression
+Source: "install_bundle\jre.msi"; DestDir: "{tmp}"; Flags: ignoreversion dontcopy nocompression
 #include "cryptad_deps.iss"
 Source: "artifacts\CryptaTray.exe"; DestDir: "{app}"; Flags: ignoreversion nocompression
 Source: "artifacts\CryptaTray.dll.config"; DestDir: "{app}"; Flags: ignoreversion
@@ -113,7 +112,7 @@ type
   end;
 
 var
-  JavaDependency, NetDependency: TDependencyPage;
+  JavaDependency: TDependencyPage;
 
   sWrapperJavaMaxMemory, sFproxyPort, sFcpPort :string;
 
@@ -247,37 +246,6 @@ begin
     Result := True;
 end;
 
-function IsNetInstalled() : boolean;
-var
-  FindRec: TFindRec;
-  BasePaths: array of string;
-  PathTemplate: string;
-  I: Integer;
-begin
-  // Define both the normal and x64-on-Arm install roots
-  SetArrayLength(BasePaths, 2);
-  BasePaths[0] := '{pf}\dotnet\shared\Microsoft.WindowsDesktop.App\*';
-  BasePaths[1] := '{pf}\dotnet\x64\shared\Microsoft.WindowsDesktop.App\*';
-  Result := False;
-
-  // Loop by index rather than 'for ... in'
-  for I := 0 to GetArrayLength(BasePaths) - 1 do
-  begin
-    if FindFirst(ExpandConstant(BasePaths[I]), FindRec) then
-    try
-      repeat
-        if Copy(FindRec.Name, 1, 2) = '9.' then
-        begin
-          Result := True;
-          Exit;
-        end;
-      until not FindNext(FindRec);
-    finally
-      FindClose(FindRec);
-    end;
-  end;
-end;
-
 procedure ButtonInstallJavaOnClick(Sender: TObject);
 var
   ErrorCode : Integer;
@@ -287,7 +255,7 @@ var
 begin
   ButtonInstallJava := TNewButton (Sender);
   ButtonInstallJava.Enabled := False;
-  sJavaInstaller := '{tmp}\OpenJDK21U-jre_x64_windows_hotspot_21.0.8_9.msi';
+  sJavaInstaller := '{tmp}\jre.msi';
   ExtractTemporaryFiles(sJavaInstaller);
   if not ShellExec('',ExpandConstant(sJavaInstaller),'ADDLOCAL=FeatureMain,FeatureEnvironment,FeatureJarFileRunWith,FeatureOracleJavaSoft INSTALLDIR="C:\Program Files\Eclipse Adoptium\jre-21.0.8.9-hotspot" /passive /noeresart','',SW_SHOWNORMAL,ewWaitUntilTerminated,ErrorCode) then begin
     sErrorCode := inttostr(ErrorCode);
@@ -298,28 +266,6 @@ begin
     if fCheckJavaInstall() then begin
       ButtonInstallJava.Visible := False;
       JavaDependency.Explanation.Caption := FmtMessage(CustomMessage('DependencyInstalled'), ['Java']);
-      WizardForm.NextButton.Enabled :=  True;
-    end;
-  end;
-end;
-
-procedure NetInstallOnClick(Sender: TObject);
-var
-  ErrorCode : Integer;
-  InstallButton: TNewButton;
-begin
-  InstallButton := TNewButton (Sender);
-  InstallButton.Enabled := False;
-  ExtractTemporaryFiles('{tmp}\windowsdesktop-runtime-9.0.7-win-x64.exe');
-  if not ShellExec('runas', ExpandConstant('{tmp}\windowsdesktop-runtime-9.0.7-win-x64.exe'), '/install /passive /noeresart', '', SW_SHOW, ewWaitUntilTerminated,ErrorCode) then begin
-    MsgBox(FmtMessage(CustomMessage('ErrorLaunchDependencyInstaller'), ['.NET 9.0', inttostr(ErrorCode), SysErrorMessage(ErrorCode)]),
-           mbError, MB_OK);
-    InstallButton.Enabled := True;
-  end else begin
-    InstallButton.Enabled := True;
-    if IsNetInstalled() then begin
-      InstallButton.Visible := False;
-      NetDependency.Explanation.Caption := FmtMessage(CustomMessage('DependencyInstalled'), ['.NET 9.0']);
       WizardForm.NextButton.Enabled :=  True;
     end;
   end;
@@ -355,7 +301,6 @@ var
   iMemTotalPhys, iWrapperJavaMaxMemory, iFproxyPort, iFcpPort : integer;
 begin
   JavaDependency := CreateDependencyPage('Java 21', 'JavaMissingText', @ButtonInstallJavaOnClick);
-  NetDependency := CreateDependencyPage('.NET 9.0', 'NetMissingText', @NetInstallOnClick);
 
   iFproxyPort := 8888;
   repeat
@@ -422,8 +367,7 @@ end;
 
 procedure CurPageChanged(CurPageID: Integer);
 begin
-  if (CurPageID = JavaDependency.Page.ID) or
-     (CurPageID = NetDependency.Page.ID)
+  if (CurPageID = JavaDependency.Page.ID)
       then begin
     WizardForm.NextButton.Enabled := False;
   end;
@@ -433,5 +377,4 @@ function ShouldSkipPage(PageID: Integer): Boolean;
 begin
   Result := False;
   if (PageID = JavaDependency.Page.ID) And fCheckJavaInstall() then Result := True;
-  if (PageID = NetDependency.Page.ID) And IsNetInstalled() then Result := True;
 end;
