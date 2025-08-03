@@ -37,9 +37,17 @@ AllowUNCPath=False
 AllowNoIcons=yes
 ;Prevent installer from being run multiple times in parallel
 SetupMutex=SetupMutex{#SetupSetting("AppId")}
-; Only allow running on 64‑bit Windows, and enable 64‑bit install mode
-ArchitecturesAllowed=x64compatible
+
+#if Arch == "x64"
+ArchitecturesAllowed=x64os
+#elif Arch == "arm64"
+ArchitecturesAllowed=arm64
+#else
+  #error "Unsupported architecture: {#Arch}"
+#endif
+
 ArchitecturesInstallIn64BitMode=x64compatible
+
 ; Require Windows 10 or newer (any build)
 MinVersion=10.0
 
