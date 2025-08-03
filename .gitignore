@@ -10,3 +10,5 @@
 .DS_Store
 /.idea/
 /.vscode/
+/artifacts/
+/install_bundle/
