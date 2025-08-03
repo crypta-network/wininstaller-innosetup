@@ -69,6 +69,8 @@ jobs:
               New-Item -ItemType Directory -Path $destDir -Force | Out-Null
           }
 
+          Write-Output "::debug::Output file: $outFile"
+
           Invoke-WebRequest -Uri $installer.installer.link -OutFile $outFile
 
       - name: Checkout windows installer
