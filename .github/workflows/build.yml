@@ -47,6 +47,11 @@ jobs:
           java-version: ${{ inputs.jdk-version }}
           distribution: "temurin"
 
+      - name: Checkout windows installer
+        uses: actions/checkout@v4
+        with:
+          repository: crypta-network/wininstaller-innosetup
+
       - name: Download Temurin JRE MSI
         shell: pwsh
         run: |
@@ -72,11 +77,6 @@ jobs:
           Write-Output "::debug::Output file: $outFile"
 
           Invoke-WebRequest -Uri $installer.installer.link -OutFile $outFile
-
-      - name: Checkout windows installer
-        uses: actions/checkout@v4
-        with:
-          repository: crypta-network/wininstaller-innosetup
 
       - name: Download built cryptad.jar
         uses: actions/download-artifact@v4
