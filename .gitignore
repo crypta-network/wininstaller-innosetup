@@ -8,3 +8,5 @@
 /cryptad_version.iss
 *_bin.exe
 .DS_Store
+/.idea/
+/.vscode/
