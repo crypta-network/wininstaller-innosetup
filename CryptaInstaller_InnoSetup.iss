@@ -38,6 +38,10 @@ AllowNoIcons=yes
 ;Prevent installer from being run multiple times in parallel
 SetupMutex=SetupMutex{#SetupSetting("AppId")}
 
+#ifndef Arch
+  #define Arch "x64"
+#endif
+
 #if Arch == "x64"
 ArchitecturesAllowed=x64os
 #elif Arch == "arm64"
