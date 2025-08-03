@@ -74,6 +74,7 @@ jobs:
               New-Item -ItemType Directory -Path $destDir -Force | Out-Null
           }
 
+          Write-Output "::debug::Downloading JRE installer from: $($installer.installer.link)"
           Write-Output "::debug::Output file: $outFile"
 
           Invoke-WebRequest -Uri $installer.installer.link -OutFile $outFile
