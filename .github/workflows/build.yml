@@ -6,7 +6,7 @@ on:
       cryptad-git-ref:
         description: Cryptad git ref
         type: string
-        default: next
+        default: main
       wintray-git-ref:
         description: Cryptad Wintray git ref
         type: string
