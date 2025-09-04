@@ -45,7 +45,7 @@ jobs:
         working-directory: cryptad
         run: |
           ./gradlew.bat --version
-          ./gradlew.bat build --stacktrace -x spotless -x spotlessApply -x spotlessCheck -x spotlessJava -x spotlessJavaApply -x spotlessJavaCheck -x spotlessKotlin -x spotlessKotlinApply -x spotlessKotlinCheck -x spotlessKotlinGradle -x spotlessKotlinGradleApply -x spotlessInternalRegisterDependencies
+          ./gradlew.bat build --stacktrace -x spotlessApply -x spotlessCheck -x spotlessJava -x spotlessJavaApply -x spotlessJavaCheck -x spotlessKotlin -x spotlessKotlinApply -x spotlessKotlinCheck -x spotlessKotlinGradle -x spotlessKotlinGradleApply -x spotlessInternalRegisterDependencies
 
       - name: Locate jlink image and package it
         shell: pwsh
