@@ -60,6 +60,11 @@ jobs:
             Write-Error "Invalid jlink image at $imageDir (missing bin/ or lib/)"; exit 1
           }
 
+          # Debug: list the image bin/ directory
+          $binDir = Join-Path $imageDir 'bin'
+          Write-Host "[dbg] Listing bin dir: $binDir"
+          Get-ChildItem -Path $binDir -Recurse | Select-Object FullName, Length, LastWriteTime | Out-String | Write-Host
+
           # Derive version from cryptad.jar manifest
           $jar = Get-ChildItem -Path $libsDir -Filter '*cryptad*.jar' -File | Sort-Object LastWriteTime -Descending | Select-Object -First 1
           if (-not $jar) { Write-Error "Could not find cryptad jar in $libsDir"; exit 1 }
