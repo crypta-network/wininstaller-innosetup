@@ -1,3 +1,6 @@
-include ':cryptad'
-
-project(':cryptad').projectDir = new File("cryptad");
+// cryptad source checkout is no longer required for jlink-based installer.
+// Keep conditional include to avoid failure if directory is absent.
+if (new File(rootDir, 'cryptad').exists()) {
+  include ':cryptad'
+  project(':cryptad').projectDir = new File('cryptad')
+}

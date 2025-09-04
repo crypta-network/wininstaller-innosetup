@@ -12,3 +12,6 @@
 /.vscode/
 /artifacts/
 /install_bundle/
+cryptad-*
+_jlink/
+_cryptad.jar
