@@ -55,13 +55,29 @@ jobs:
           $root = Join-Path $env:GITHUB_WORKSPACE 'cryptad'
           $distDir = Join-Path $root 'build/distributions'
           $libsDir = Join-Path $root 'build/libs'
+          Write-Host "[dbg] root=$root"
+          Write-Host "[dbg] distDir=$distDir"
+          Write-Host "[dbg] libsDir=$libsDir"
 
-          if (-not (Test-Path $distDir)) { Write-Error "Missing jlink distributions dir: $distDir"; exit 1 }
-          if (-not (Test-Path $libsDir)) { Write-Error "Missing libs dir: $libsDir"; exit 1 }
+          if (-not (Test-Path $distDir)) {
+            Write-Host "[dbg] build directory tree (depth 3):"
+            $buildDir = Join-Path $root 'build'
+            if (Test-Path $buildDir) { Get-ChildItem -Path $buildDir -Depth 3 | Select-Object FullName,LastWriteTime | Out-String | Write-Host }
+            Write-Error "Missing jlink distributions dir: $distDir"; exit 1
+          }
+          if (-not (Test-Path $libsDir)) {
+            Write-Host "[dbg] build directory tree (depth 2):"
+            $buildDir = Join-Path $root 'build'
+            if (Test-Path $buildDir) { Get-ChildItem -Path $buildDir -Depth 2 | Select-Object FullName,LastWriteTime | Out-String | Write-Host }
+            Write-Error "Missing libs dir: $libsDir"; exit 1
+          }
 
           # Read version from the built jar manifest
-          $jar = Get-ChildItem -Path $libsDir -Filter '*cryptad*.jar' -File | Sort-Object LastWriteTime -Descending | Select-Object -First 1
+          Write-Host "[dbg] Listing libsDir: $libsDir"
+          Get-ChildItem -Path $libsDir -File | Select-Object Name,Length,LastWriteTime | Out-String | Write-Host
+          $jar = Get-ChildItem -Path $libsDir -Filter '*cryptad*.jar' -File -ErrorAction SilentlyContinue | Sort-Object LastWriteTime -Descending | Select-Object -First 1
           if (-not $jar) { Write-Error "Could not find cryptad jar in $libsDir"; exit 1 }
+          Write-Host "[dbg] Found jar: $($jar.FullName)"
           jar tf "$($jar.FullName)" | Out-Null
           jar xvf "$($jar.FullName)" META-INF/MANIFEST.MF | Out-Null
           $impl = Get-Content .\META-INF\MANIFEST.MF -Raw
@@ -73,16 +89,26 @@ jobs:
           if (-not $verNum) { $verNum = '1' }
 
           # Find jlink image under build/distributions
+          Write-Host "[dbg] Listing distDir (top-level):"
+          Get-ChildItem -Path $distDir | Select-Object Name,FullName,LastWriteTime,Attributes | Out-String | Write-Host
           $img = Get-ChildItem -Path $distDir -Directory -ErrorAction SilentlyContinue |
             Where-Object { Test-Path (Join-Path $_.FullName 'bin') -and (Test-Path (Join-Path $_.FullName 'lib')) } |
             Sort-Object LastWriteTime -Descending | Select-Object -First 1
+          if ($img) { Write-Host "[dbg] Found unpacked jlink image dir: $($img.FullName)" }
 
           $tempExtract = $null
           if (-not $img) {
             # Maybe packaged as an archive; try .tar.gz, .tar, then .zip
+            Write-Host "[dbg] No unpacked image found. Searching for archives in $distDir ..."
+            Get-ChildItem -Path $distDir -File | Select-Object Name,Length,LastWriteTime | Out-String | Write-Host
             $archive = Get-ChildItem -Path $distDir -File -Include *.tar.gz,*.tgz,*.tar,*.zip -ErrorAction SilentlyContinue |
               Sort-Object LastWriteTime -Descending | Select-Object -First 1
-            if (-not $archive) { Write-Error "No jlink image or archive found under any build/ directory"; exit 1 }
+            if (-not $archive) {
+              Write-Host "[dbg] No archives matched in $distDir. Showing recursive file listing (depth 2):"
+              Get-ChildItem -Path $distDir -Recurse -Depth 2 -File | Select-Object FullName,Length,LastWriteTime | Out-String | Write-Host
+              Write-Error "No jlink image or archive found under any build/ directory"; exit 1
+            }
+            Write-Host "[dbg] Chosen archive: $($archive.FullName)"
             $tempExtract = New-Item -ItemType Directory -Path (Join-Path $env:RUNNER_TEMP 'cryptad_jlink') -Force
             $name = $archive.Name.ToLowerInvariant()
             if ($name -like '*.zip') {
@@ -94,6 +120,8 @@ jobs:
             } else {
               Write-Error "Unsupported archive format: $name"; exit 1
             }
+            Write-Host "[dbg] Extraction complete. Listing extract root: $($tempExtract.FullName)"
+            Get-ChildItem -Path $tempExtract.FullName -Depth 2 | Select-Object FullName,LastWriteTime | Out-String | Write-Host
             $img = Get-ChildItem -Path $tempExtract.FullName -Recurse -Directory -Depth 2 -ErrorAction SilentlyContinue |
               Where-Object { Test-Path (Join-Path $_.FullName 'bin') -and (Test-Path (Join-Path $_.FullName 'lib')) } |
               Sort-Object FullName | Select-Object -First 1
