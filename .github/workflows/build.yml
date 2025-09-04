@@ -39,47 +39,66 @@ jobs:
         with:
           cache-read-only: ${{ github.event_name == 'pull_request' }}
 
-      - name: List Gradle tasks and build jlink
+      - name: Build cryptad (jlink dist)
         shell: pwsh
         run: |
           ./gradlew.bat --version
-          ./gradlew.bat tasks --all > tasks.txt
-          $tasks = Get-Content tasks.txt -Raw
-          $candidates = @('runtimeZip','jlinkZip','runtimeTar','jlinkTar','runtime','jlink','packageDist','distTar','distZip')
-          $chosen = $null
-          foreach ($t in $candidates) {
-            if ($tasks -match "(?m)^\s*${t}\b") { $chosen = $t; break }
-          }
-          if (-not $chosen) { Write-Error "No known jlink packaging task found. Available tasks:`n$tasks" ; exit 1 }
-          Write-Host "Using Gradle task: $chosen"
-          ./gradlew.bat $chosen -x test --no-daemon --stacktrace
+          ./gradlew.bat build --no-daemon --stacktrace
 
       - name: Locate jlink image and package it
         shell: pwsh
         id: pack
         run: |
-          $img = Get-ChildItem -Path . -Recurse -Directory -ErrorAction SilentlyContinue |
-            Where-Object { Test-Path (Join-Path $_.FullName 'bin') -and (Test-Path (Join-Path $_.FullName 'lib')) } |
-            Where-Object { Test-Path (Join-Path $_.FullName 'lib/cryptad.jar') } |
-            Sort-Object FullName -Descending | Select-Object -First 1
-          if (-not $img) { Write-Error 'Could not find jlink image with lib/cryptad.jar'; exit 1 }
-          Write-Host "Found image: $($img.FullName)"
+          $root    = Get-Location
+          $distDir = Join-Path $root 'build/distributions'
+          $libsDir = Join-Path $root 'build/libs'
 
-          $jar = Join-Path $img.FullName 'lib/cryptad.jar'
-          jar tf "$jar" | Out-Null
-          jar xvf "$jar" META-INF/MANIFEST.MF | Out-Null
+          if (-not (Test-Path $distDir)) { Write-Error "Missing jlink distributions dir: $distDir"; exit 1 }
+          if (-not (Test-Path $libsDir)) { Write-Error "Missing libs dir: $libsDir"; exit 1 }
+
+          # Read version from the built jar manifest
+          $jar = Get-ChildItem -Path $libsDir -Filter '*cryptad*.jar' -File | Sort-Object LastWriteTime -Descending | Select-Object -First 1
+          if (-not $jar) { Write-Error "Could not find cryptad jar in $libsDir"; exit 1 }
+          jar tf "$($jar.FullName)" | Out-Null
+          jar xvf "$($jar.FullName)" META-INF/MANIFEST.MF | Out-Null
           $impl = Get-Content .\META-INF\MANIFEST.MF -Raw
           Remove-Item -Recurse -Force .\META-INF -ErrorAction SilentlyContinue
-
           $implVer = ($impl -split "`n" | Where-Object { $_ -match '^Implementation-Version:' } | ForEach-Object { ($_ -split ':',2)[1].Trim() })
           if (-not $implVer) { $implVer = '1 unknown' }
           $parts = ($implVer -replace ';',' ') -split '\s+',2
           $verNum = $parts[0]
           if (-not $verNum) { $verNum = '1' }
-          $out = Join-Path $PWD ("cryptad-jlink-v{0}.tar.gz" -f $verNum)
+
+          # Find jlink image under build/distributions
+          $img = Get-ChildItem -Path $distDir -Directory -ErrorAction SilentlyContinue |
+            Where-Object { Test-Path (Join-Path $_.FullName 'bin') -and (Test-Path (Join-Path $_.FullName 'lib')) } |
+            Sort-Object LastWriteTime -Descending | Select-Object -First 1
+
+          $tempExtract = $null
+          if (-not $img) {
+            # Maybe packaged as an archive; try .tar.gz then .zip
+            $archive = Get-ChildItem -Path $distDir -File -Include *.tar.gz,*.zip -ErrorAction SilentlyContinue |
+              Sort-Object LastWriteTime -Descending | Select-Object -First 1
+            if (-not $archive) { Write-Error "No jlink image or archive found in $distDir"; exit 1 }
+            $tempExtract = New-Item -ItemType Directory -Path (Join-Path $env:RUNNER_TEMP 'cryptad_jlink') -Force
+            if ($archive.Extension -ieq '.zip') {
+              Expand-Archive -Path $archive.FullName -DestinationPath $tempExtract.FullName -Force
+            } else {
+              tar -xzf $archive.FullName -C $tempExtract.FullName
+            }
+            $img = Get-ChildItem -Path $tempExtract.FullName -Recurse -Directory -Depth 2 -ErrorAction SilentlyContinue |
+              Where-Object { Test-Path (Join-Path $_.FullName 'bin') -and (Test-Path (Join-Path $_.FullName 'lib')) } |
+              Sort-Object FullName | Select-Object -First 1
+          }
+
+          if (-not $img) { Write-Error 'Could not locate unpacked jlink image (bin/ and lib/ folder)'; exit 1 }
+          Write-Host "Found image: $($img.FullName)"
+
+          $out = Join-Path $root ("cryptad-jlink-v{0}.tar.gz" -f $verNum)
           Write-Host "Creating archive: $out"
           tar -czf $out -C $img.FullName .
 
+          if ($tempExtract) { Remove-Item -Recurse -Force $tempExtract -ErrorAction SilentlyContinue }
           echo "archive_path=$out" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
 
       - name: Upload jlink artifact
