@@ -51,9 +51,10 @@ jobs:
         shell: pwsh
         id: pack
         run: |
-          $root     = Join-Path $env:GITHUB_WORKSPACE 'cryptad'
-          $imageDir = Join-Path $root 'build/cryptad-jlink-image'
-          $libsDir  = Join-Path $root 'build/libs'
+          $root       = Join-Path $env:GITHUB_WORKSPACE 'cryptad'
+          $imageDir   = Join-Path $root 'build/cryptad-jlink-image'
+          $libsDir    = Join-Path $root 'build/libs'
+          $distBinDir = Join-Path $root 'build/cryptad-dist/bin'
 
           if (-not (Test-Path $imageDir -PathType Container)) { Write-Error "Missing jlink image dir: $imageDir"; exit 1 }
           if (-not (Test-Path (Join-Path $imageDir 'bin')) -or -not (Test-Path (Join-Path $imageDir 'lib'))) {
@@ -64,6 +65,14 @@ jobs:
           $binDir = Join-Path $imageDir 'bin'
           Write-Host "[dbg] Listing bin dir: $binDir"
           Get-ChildItem -Path $binDir -Recurse | Select-Object FullName, Length, LastWriteTime | Out-String | Write-Host
+
+          # Debug: list the cryptad-dist/bin directory if present
+          Write-Host "[dbg] Listing cryptad-dist bin (if present): $distBinDir"
+          if (Test-Path $distBinDir) {
+            Get-ChildItem -Path $distBinDir -Recurse | Select-Object FullName, Length, LastWriteTime | Out-String | Write-Host
+          } else {
+            Write-Host "[dbg] Not found: $distBinDir"
+          }
 
           # Derive version from cryptad.jar manifest
           $jar = Get-ChildItem -Path $libsDir -Filter '*cryptad*.jar' -File | Sort-Object LastWriteTime -Descending | Select-Object -First 1
