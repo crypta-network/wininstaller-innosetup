@@ -5,7 +5,7 @@
 #include "cryptad_version.iss"
 #define AppPublisher "crypta.network"
 #define AppURL "https://crypta.network/"
-#define AppExeName "CryptaTray.exe"
+#define AppExeName "bin\\cryptad-launcher.bat"
 
 [Setup]
 ; NOTE: The value of AppId uniquely identifies this application.
@@ -28,8 +28,8 @@ SolidCompression=yes
 PrivilegesRequired=lowest
 WizardImageFile=resources\Wizard_CryptaInstall.bmp
 WizardSmallImageFile=resources\Wizard_CryptaInstall_Small.bmp
-;Space needed 650 Mo
-ExtraDiskSpaceRequired=681574400
+; Approx space for jlink bundle + app data (~300 MiB)
+ExtraDiskSpaceRequired=314572800
 Compression=lzma2/ultra
 InternalCompressLevel=ultra
 RestartIfNeededByRun=False
@@ -56,264 +56,102 @@ ArchitecturesInstallIn64BitMode=x64compatible
 MinVersion=10.0
 
 [Languages]
-Name: "english"; MessagesFile: "compiler:Default.isl,.\translations\Messages_en_utf8.isl"
+Name: "english"; MessagesFile: "compiler:Default.isl,.\\translations\\Messages_en_utf8.isl"
 
 [Files]
-// this is used to copy wrapper.conf to wrapper.conf.old before overwriting the file when updating the node.
-// there is a check for wrapper.conf.old you have to adjust if you change the name here.
-Source: "{app}\wrapper\wrapper.conf"; DestDir: "{app}\wrapper"; DestName: "wrapper.conf.old"; Flags: external skipifsourcedoesntexist
+; DLL used for port checks
+Source: "CryptaInstaller_InnoSetup_library\\CryptaInstaller_InnoSetup_library.dll"; DestDir: "{tmp}"; Flags: ignoreversion dontcopy
 
-[Files]
-Source: "CryptaInstaller_InnoSetup_library\CryptaInstaller_InnoSetup_library.dll"; DestDir: "{tmp}"; Flags: ignoreversion dontcopy
-Source: "install_bundle\jre.msi"; DestDir: "{tmp}"; Flags: ignoreversion dontcopy nocompression
-#include "cryptad_deps.iss"
-Source: "artifacts\CryptaTray.exe"; DestDir: "{app}"; Flags: ignoreversion nocompression
-Source: "artifacts\CryptaTray.dll.config"; DestDir: "{app}"; Flags: ignoreversion
-Source: "install_node\README.txt"; DestDir: "{app}"; Flags: ignoreversion
-Source: "install_node\seednodes.fref"; DestDir: "{app}"; Flags: ignoreversion
-Source: "install_node\installid.dat"; DestDir: "{app}"; Flags: ignoreversion
-Source: "install_node\installlayout.dat"; DestDir: "{app}"; Flags: ignoreversion
-Source: "install_node\licenses\LICENSE.Crypta"; DestDir: "{app}\licenses"; Flags: ignoreversion
-Source: "install_node\licenses\LICENSE.Mantissa"; DestDir: "{app}\licenses"; Flags: ignoreversion
-Source: "install_node\plugins\JSTUN.jar"; DestDir: "{app}\plugins"; Flags: ignoreversion
-Source: "install_node\plugins\KeyUtils.jar"; DestDir: "{app}\plugins"; Flags: ignoreversion
-Source: "install_node\plugins\Library.jar"; DestDir: "{app}\plugins"; Flags: ignoreversion
-Source: "install_node\plugins\ThawIndexBrowser.jar"; DestDir: "{app}\plugins"; Flags: ignoreversion
-Source: "install_node\plugins\UPnP.jar"; DestDir: "{app}\plugins"; Flags: ignoreversion
-Source: "install_node\plugins\Sharesite.jar"; DestDir: "{app}\plugins"; Flags: ignoreversion
-Source: "install_node\updater\sha1test.jar"; DestDir: "{app}\updater"; Flags: ignoreversion
-Source: "install_node\updater\startssl.pem"; DestDir: "{app}\updater"; Flags: ignoreversion
-Source: "install_node\updater\update.cmd"; DestDir: "{app}\updater"; Flags: ignoreversion
-Source: "install_node\updater\wget.exe"; DestDir: "{app}\updater"; Flags: ignoreversion
-Source: "install_node\wrapper\cryptawrapper-64.exe"; DestDir: "{app}\wrapper"; Flags: ignoreversion nocompression
-Source: "install_node\wrapper\wrapper.jar"; DestDir: "{app}\wrapper"; Flags: ignoreversion
-Source: "install_node\wrapper\wrapper-windows-x86-64.dll"; DestDir: "{app}\wrapper"; Flags: ignoreversion
-Source: "install_node\wrapper\wrapper.conf"; DestDir: "{app}\wrapper"; Flags: ignoreversion; AfterInstall: WrapperConfDoAfterInstall
-Source: "resources\CryptaInstaller_InnoSetup_Uninstall.ico"; DestDir: "{app}"; Flags: ignoreversion
+; Copy jlink distribution produced by cryptad build
+Source: "artifacts\\cryptad-jlink-dist\\bin\\*"; DestDir: "{app}\\bin"; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "artifacts\\cryptad-jlink-dist\\lib\\*"; DestDir: "{app}\\lib"; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "artifacts\\cryptad-jlink-dist\\conf\\*"; DestDir: "{app}\\conf"; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "artifacts\\cryptad-jlink-dist\\legal\\*"; DestDir: "{app}\\legal"; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "artifacts\\cryptad-jlink-dist\\release"; DestDir: "{app}"; Flags: ignoreversion; AfterInstall: CryptadJarDoAfterInstall
+
+; Optional: top-level README/licenses shipped with installer if any
+Source: "install_node\\README.txt"; DestDir: "{app}"; Flags: ignoreversion skipifsourcedoesntexist
+Source: "install_node\\licenses\\*"; DestDir: "{app}\\licenses"; Flags: ignoreversion recursesubdirs createallsubdirs skipifsourcedoesntexist
+Source: "resources\\CryptaInstaller_InnoSetup_Uninstall.ico"; DestDir: "{app}"; Flags: ignoreversion
 
 [Tasks]
 Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{cm:AdditionalIcons}"; Flags: unchecked
 
 [Icons]
-Name: "{group}\{#AppName}"; Filename: "{app}\{#AppExeName}"
-Name: "{group}\{cm:UninstallProgram,{#AppName}}"; Filename: "{uninstallexe}"
-Name: "{autodesktop}\{#AppName}"; Filename: "{app}\{#AppExeName}"; Tasks: desktopicon
+Name: "{group}\\{#AppName}"; Filename: "{app}\\{#AppExeName}"
+Name: "{group}\\{cm:UninstallProgram,{#AppName}}"; Filename: "{uninstallexe}"
+Name: "{autodesktop}\\{#AppName}"; Filename: "{app}\\{#AppExeName}"; Tasks: desktopicon
 
 [Run]
-Filename: "{app}\{#AppExeName}"; Parameters: "-welcome"; Flags: nowait postinstall skipifsilent; Description: "{cm:LaunchProgram,{#StringChange(AppName, '&', '&&')}}"
+Filename: "{app}\\{#AppExeName}"; Flags: nowait postinstall skipifsilent shellexec; Description: "{cm:LaunchProgram,{#StringChange(AppName, '&', '&&')}}"
 
 [UninstallDelete]
-; TODO: See http://www.jrsoftware.org/ishelp/index.php?topic=uninstalldeletesection - this should enumerate expected files instead of complete wildcard.
-Type: filesandordirs; Name: "{app}\*"
-Type: filesandordirs; Name: "{localappdata}\CryptaTray"
-
-[UninstallRun]
-Filename: "{cmd}"; \
-Parameters: "/C ""taskkill /im CryptaTray.exe"""; \
-Flags: runhidden; \
-RunOnceId: "QuitCryptaTray"
-
-[Registry]
-Root: "HKCU"; Subkey: "SOFTWARE\Microsoft\Windows\CurrentVersion\Run"; ValueType: string; ValueName: "CryptaTray"; ValueData: """{app}\{#AppExeName}"""; Flags: uninsdeletevalue
+; TODO: enumerate expected files instead of wildcard if possible
+Type: filesandordirs; Name: "{app}\\*"
 
 [Code]
-type
-  TDependencyPage = record
-    Page: TWizardPage;
-    Explanation: TNewStaticText;
-  end;
-
 var
-  JavaDependency: TDependencyPage;
-
-  sWrapperJavaMaxMemory, sFproxyPort, sFcpPort :string;
+  sFproxyPort, sFcpPort: string;
 
 function IsPortAvailable(sIpAddress: ansistring; wPort: word): boolean;
-external 'fIsPortAvailable@files:CryptaInstaller_InnoSetup_library.dll stdcall setuponly';
+  external 'fIsPortAvailable@files:CryptaInstaller_InnoSetup_library.dll stdcall setuponly';
 
-function MemoryTotalPhys(var NodeMaxMem: integer): boolean;
-external 'fMemoryTotalPhys@files:CryptaInstaller_InnoSetup_library.dll stdcall setuponly';
-
-function CreateDependencyPage(Name, MissingKey: string; InstallClickHandler: TNotifyEvent) : TDependencyPage; Forward;
-
-procedure OpenWebSupport();
+procedure CryptadJarDoAfterInstall();
 var
-ErrorCode : Integer;
-sErrorCode: string;
+  sConfigLines : array[0..3] of string;
 begin
-  if not ShellExec('', 'https://github.com/crypta-network', '', '', SW_SHOW, ewWaitUntilIdle, ErrorCode) then 
-    begin
-      sErrorCode := inttostr(ErrorCode);
-      MsgBox(FmtMessage(CustomMessage('ErrorLaunchBrowser'), [sErrorCode, SysErrorMessage(ErrorCode)]), mbError, MB_OK);
-    end;
-end;
-
-procedure ExistingInstallationDamaged();
-begin
-  case MsgBox(CustomMessage('ErrorInstallationDamaged'), mbError, MB_YESNO) of
-    IDYES:
-    begin
-      OpenWebSupport();
-    end;
-    IDNO:
-    begin
-      // user pressed No
-    end;
-  end;
-end;
-
-function OpenUpdateScript(InstallationPath: string) :boolean;
-var
-ErrorCode : Integer;
-sErrorCode: string;
-begin
-  result := true;
-
-  if not ShellExec('', Format('%s\update.cmd', [InstallationPath]), '', '', SW_SHOW, ewWaitUntilTerminated, ErrorCode) then 
-  begin
-    ExistingInstallationDamaged();
-  end;
-end;
-
-function OpenWebInterface(InstallationPath: string) :boolean;
-var
-ErrorCode : Integer;
-sErrorCode: string;
-begin
-  result := true;
-
-  if not ShellExec('', Format('%s\CryptaTray.exe', [InstallationPath]), '-welcome', '', SW_SHOW, ewWaitUntilIdle, ErrorCode) then 
-  begin
-    ExistingInstallationDamaged();
+  if not FileExists(ExpandConstant('{app}\\cryptad.ini')) then begin
+    sConfigLines[0] := 'fproxy.port=' + sFproxyPort;
+    sConfigLines[1] := 'fcp.port=' + sFcpPort;
+    sConfigLines[2] := 'node.downloadsDir=.\\downloads';
+    sConfigLines[3] := 'End';
+    SaveStringsToUTF8File(ExpandConstant('{app}\\cryptad.ini'), sConfigLines, False);
   end;
 end;
 
 function InitializeSetup: boolean;
 var 
-RegKey: string;
-ExistingInstallation: Boolean;
-RegistryLocationRootKey: Integer;
-ExistingInstallationPath : string;
+  RegKey: string;
+  ExistingInstallation: Boolean;
+  RegistryLocationRootKey: Integer;
+  ExistingInstallationPath : string;
 begin
   result := true;
   ExistingInstallation := false;
   
-  RegKey := ExpandConstant('Software\Microsoft\Windows\CurrentVersion\Uninstall\{#SetupSetting("AppId")}_is1');
+  RegKey := ExpandConstant('Software\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\{#SetupSetting("AppId")}_is1');
 
-  if RegKeyExists(HKLM, RegKey) then 
-  begin 
+  if RegKeyExists(HKLM, RegKey) then begin 
     ExistingInstallation := true;
     RegistryLocationRootKey := HKLM;
   end;
-  
-  if RegKeyExists(HKCU, RegKey) then 
-  begin 
+  if RegKeyExists(HKCU, RegKey) then begin 
     ExistingInstallation := true;
     RegistryLocationRootKey := HKCU;
   end;
-  
-  if RegKeyExists(HKU, RegKey) then 
-  begin 
+  if RegKeyExists(HKU, RegKey) then begin 
     ExistingInstallation := true;
     RegistryLocationRootKey := HKU;
   end;
 
-  if ExistingInstallation then
-  begin
-    if RegQueryStringValue(RegistryLocationRootKey, RegKey, 'InstallLocation', ExistingInstallationPath) then
-    begin
+  if ExistingInstallation then begin
+    if RegQueryStringValue(RegistryLocationRootKey, RegKey, 'InstallLocation', ExistingInstallationPath) then begin
       case MsgBox(CustomMessage('ErrorCryptaAlreadyInstalled'), mbError, MB_YESNO) of
-        IDYES:
-        begin
-          result := True;
-
-          // Don't use outdated script - instead just overwrite installation
-          // Installer will warn if "CryptaTray.exe", "OpenJDK Platform binary" or "Java Service Wrapper Community Edition" are running
-          //OpenUpdateScript(ExistingInstallationPath);
+        IDYES: begin
+          result := True; // overwrite in-place
         end;
-        IDNO:
-        begin
-          // user pressed No
+        IDNO: begin
           result := False;
         end;
       end;
-    end else begin
-      ExistingInstallationDamaged();
     end;
   end;
-end;
-
-function fCheckJavaInstall():boolean;
-var
-  ErrorCode : Integer;
-  JavaVersion : string;
-begin
-  Result := False;
-  // the installer is a 32-bit process, so we need to explicitly 
-  // check the 64-bit registry view to find out if a 64-bit JVM is installed
-  RegQueryStringValue(HKLM64, 'SOFTWARE\JavaSoft\JRE', 'CurrentVersion', JavaVersion)
-  RegQueryStringValue(HKLM64, 'SOFTWARE\JavaSoft\JDK', 'CurrentVersion', JavaVersion)
-  
-  if CompareStr(JavaVersion,'21') >= 0  then
-    Result := True;
-end;
-
-procedure ButtonInstallJavaOnClick(Sender: TObject);
-var
-  ErrorCode : Integer;
-  sErrorCode: string;
-  sJavaInstaller: string;
-  ButtonInstallJava: TNewButton;
-begin
-  ButtonInstallJava := TNewButton (Sender);
-  ButtonInstallJava.Enabled := False;
-  sJavaInstaller := '{tmp}\jre.msi';
-  ExtractTemporaryFiles(sJavaInstaller);
-  if not ShellExec('',ExpandConstant(sJavaInstaller),'ADDLOCAL=FeatureMain,FeatureEnvironment,FeatureJarFileRunWith,FeatureOracleJavaSoft /passive /norestart','',SW_SHOWNORMAL,ewWaitUntilTerminated,ErrorCode) then begin
-    sErrorCode := inttostr(ErrorCode);
-    MsgBox(FmtMessage(CustomMessage('ErrorLaunchDependencyInstaller'), ['Java', sErrorCode,SysErrorMessage(ErrorCode)]), mbError, MB_OK)
-    ButtonInstallJava.Enabled := True;
-  end else begin
-    ButtonInstallJava.Enabled := True;
-    if fCheckJavaInstall() then begin
-      ButtonInstallJava.Visible := False;
-      JavaDependency.Explanation.Caption := FmtMessage(CustomMessage('DependencyInstalled'), ['Java']);
-      WizardForm.NextButton.Enabled :=  True;
-    end;
-  end;
-end;
-
-procedure CryptadJarDoAfterInstall();
-var
-  sConfigLines : array[0..5] of string;
-begin
-  if not FileExists(ExpandConstant('{app}\cryptad.ini')) then begin
-    sConfigLines[0] := 'fproxy.port=' + sFproxyPort;
-    sConfigLines[1] := 'fcp.port=' + sFcpPort;
-    sConfigLines[2] := 'pluginmanager.loadplugin=JSTUN;KeyUtils;UPnP;Sharesite';
-    sConfigLines[3] := 'node.updater.autoupdate=true';
-    sConfigLines[4] := 'node.downloadsDir=.\downloads';
-    sConfigLines[5] := 'End';
-    SaveStringsToUTF8File(ExpandConstant('{app}\cryptad.ini'), sConfigLines, False);
-  end;
-end;
-
-procedure WrapperConfDoAfterInstall();
-begin
-  if FileExists(ExpandConstant('{app}\wrapper\wrapper.conf.old')) then begin // do not notify on very first installation, only when updating   
-    MsgBox(CustomMessage('WrapperOverwritten'), mbInformation, MB_OK);
-  end;
-
-  SaveStringToFile(ExpandConstant('{app}\wrapper\wrapper.conf'), '# Memory limit for the node' + #13#10 , True);
-  SaveStringToFile(ExpandConstant('{app}\wrapper\wrapper.conf'), 'wrapper.java.maxmemory=' + sWrapperJavaMaxMemory + #13#10 , True);
 end;
 
 procedure InitializeWizard;
 var
-  iMemTotalPhys, iWrapperJavaMaxMemory, iFproxyPort, iFcpPort : integer;
+  iFproxyPort, iFcpPort : integer;
 begin
-  JavaDependency := CreateDependencyPage('Java 21', 'JavaMissingText', @ButtonInstallJavaOnClick);
-
   iFproxyPort := 8888;
   repeat
     if IsPortAvailable('127.0.0.1', iFproxyPort) then
@@ -335,58 +173,4 @@ begin
     end;
   until iFcpPort = 9481 + 256;
   sFcpPort := IntToStr(iFcpPort);
-
-  MemoryTotalPhys(iMemTotalPhys);
-  if iMemTotalPhys >= 8192 then
-    iWrapperJavaMaxMemory := 1536
-  else if iMemTotalPhys >= 4096 then
-    iWrapperJavaMaxMemory := 1024
-  else if iMemTotalPhys >= 2048 then
-    iWrapperJavaMaxMemory := 512
-  else
-    iWrapperJavaMaxMemory := 256;
-
-  sWrapperJavaMaxMemory := InttoStr(iWrapperJavaMaxMemory);
- 
-  fCheckJavaInstall();
-end;
-
-function CreateDependencyPage(Name, MissingKey: string; InstallClickHandler: TNotifyEvent) : TDependencyPage;
-var
-  InstallButton: TNewButton;
-begin;
-  Result.Page := CreateCustomPage(wpWelcome,
-                                  CustomMessage('DependencyMissingPageCaption'),
-                                  FmtMessage(CustomMessage('DependencyMissingPageDescription'), [Name]));
-  
-  Result.Explanation := TNewStaticText.Create(Result.Page);
-  Result.Explanation.Top := 10;
-  Result.Explanation.AutoSize := True;
-  Result.Explanation.WordWrap := True;
-  Result.Explanation.Parent := Result.Page.Surface;
-  Result.Explanation.Caption := CustomMessage(MissingKey);
-  Result.Explanation.Width := ScaleX(400);
-
-  InstallButton := TNewButton.Create(Result.Page);
-  InstallButton.Width := ScaleX(280);
-  InstallButton.Height := ScaleY(30);
-  InstallButton.Top := 100;
-  InstallButton.Left := 60;
-  InstallButton.Caption := FmtMessage(CustomMessage('ButtonInstallDependency'), [Name]);
-  InstallButton.OnClick := InstallClickHandler;
-  InstallButton.Parent := Result.Page.Surface;
-end;
-
-procedure CurPageChanged(CurPageID: Integer);
-begin
-  if (CurPageID = JavaDependency.Page.ID)
-      then begin
-    WizardForm.NextButton.Enabled := False;
-  end;
-end;
-
-function ShouldSkipPage(PageID: Integer): Boolean;
-begin
-  Result := False;
-  if (PageID = JavaDependency.Page.ID) And fCheckJavaInstall() then Result := True;
 end;
