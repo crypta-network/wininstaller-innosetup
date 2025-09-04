@@ -7,29 +7,91 @@ on:
         description: Cryptad git ref
         type: string
         default: main
-      wintray-git-ref:
-        description: Cryptad Wintray git ref
-        type: string
-        default: master
       jdk-version:
+        description: JDK major version to use (Temurin)
         type: string
         default: "21"
 
 jobs:
   build-cryptad:
-    uses: crypta-network/cryptad/.github/workflows/build.yml@next
-    with:
-      git-ref: ${{ inputs.cryptad-git-ref }}
-      jdk-version: ${{ inputs.jdk-version }}
+    strategy:
+      matrix:
+        os: [windows-latest, windows-11-arm]
+    runs-on: ${{ matrix.os }}
+    env:
+      RUNTIME_IDENTIFIER: ${{ matrix.os == 'windows-latest' && 'x64' || 'arm64'}}
+    steps:
+      - name: Set up JDK
+        uses: actions/setup-java@v4
+        with:
+          java-version: ${{ inputs.jdk-version }}
+          distribution: "temurin"
 
-  # Always build HEAD version for now
-  build-wintray:
-    uses: crypta-network/wintray/.github/workflows/build.yml@master
-    with:
-      git-ref: ${{ inputs.wintray-git-ref }}
+      - name: Checkout cryptad source code
+        uses: actions/checkout@v4
+        with:
+          repository: crypta-network/cryptad
+          ref: ${{ inputs.cryptad-git-ref }}
+          fetch-depth: 0
+
+      - name: Cache Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          cache-read-only: ${{ github.event_name == 'pull_request' }}
+
+      - name: List Gradle tasks and build jlink
+        shell: pwsh
+        run: |
+          ./gradlew.bat --version
+          ./gradlew.bat tasks --all > tasks.txt
+          $tasks = Get-Content tasks.txt -Raw
+          $candidates = @('runtimeZip','jlinkZip','runtimeTar','jlinkTar','runtime','jlink','packageDist','distTar','distZip')
+          $chosen = $null
+          foreach ($t in $candidates) {
+            if ($tasks -match "(?m)^\s*${t}\b") { $chosen = $t; break }
+          }
+          if (-not $chosen) { Write-Error "No known jlink packaging task found. Available tasks:`n$tasks" ; exit 1 }
+          Write-Host "Using Gradle task: $chosen"
+          ./gradlew.bat $chosen -x test --no-daemon --stacktrace
+
+      - name: Locate jlink image and package it
+        shell: pwsh
+        id: pack
+        run: |
+          $img = Get-ChildItem -Path . -Recurse -Directory -ErrorAction SilentlyContinue |
+            Where-Object { Test-Path (Join-Path $_.FullName 'bin') -and (Test-Path (Join-Path $_.FullName 'lib')) } |
+            Where-Object { Test-Path (Join-Path $_.FullName 'lib/cryptad.jar') } |
+            Sort-Object FullName -Descending | Select-Object -First 1
+          if (-not $img) { Write-Error 'Could not find jlink image with lib/cryptad.jar'; exit 1 }
+          Write-Host "Found image: $($img.FullName)"
+
+          $jar = Join-Path $img.FullName 'lib/cryptad.jar'
+          jar tf "$jar" | Out-Null
+          jar xvf "$jar" META-INF/MANIFEST.MF | Out-Null
+          $impl = Get-Content .\META-INF\MANIFEST.MF -Raw
+          Remove-Item -Recurse -Force .\META-INF -ErrorAction SilentlyContinue
+
+          $implVer = ($impl -split "`n" | Where-Object { $_ -match '^Implementation-Version:' } | ForEach-Object { ($_ -split ':',2)[1].Trim() })
+          if (-not $implVer) { $implVer = '1 unknown' }
+          $parts = ($implVer -replace ';',' ') -split '\s+',2
+          $verNum = $parts[0]
+          if (-not $verNum) { $verNum = '1' }
+          $out = Join-Path $PWD ("cryptad-jlink-v{0}.tar.gz" -f $verNum)
+          Write-Host "Creating archive: $out"
+          tar -czf $out -C $img.FullName .
+
+          echo "archive_path=$out" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
+
+      - name: Upload jlink artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: cryptad-jlink-${{ env.RUNTIME_IDENTIFIER }}
+          path: ${{ steps.pack.outputs.archive_path }}
+
+  # Wintray no longer required with jlink launcher
 
   build:
-    needs: [build-cryptad, build-wintray]
+    needs: [build-cryptad]
 
     strategy:
       matrix:
@@ -52,61 +114,23 @@ jobs:
         with:
           repository: crypta-network/wininstaller-innosetup
 
-      - name: Download Temurin JRE MSI
-        shell: pwsh
-        run: |
-          $rid = $env:RUNTIME_IDENTIFIER
-          switch ($rid) {
-            'arm64'  { $arch = 'aarch64' ; break }
-            'x64'    { $arch = 'x64'     ; break }
-            default  { throw "Unsupported RUNTIME_IDENTIFIER: $rid" }
-          }
+      # JRE no longer needed with jlink distribution
 
-          $version = '${{ inputs.jdk-version }}'
-          $uri = "https://api.adoptium.net/v3/assets/feature_releases/$version/ga?architecture=$arch&image_type=jre&os=windows&page=0&page_size=1"
-          $response = Invoke-RestMethod -Uri $uri
-
-          $installer = $response.binaries[0]
-
-          $destDir  = Join-Path -Path $PWD -ChildPath 'install_bundle'
-          $outFile  = Join-Path -Path $destDir -ChildPath 'jre.msi'
-          if (-not (Test-Path -Path $destDir -PathType Container)) {
-              New-Item -ItemType Directory -Path $destDir -Force | Out-Null
-          }
-
-          Write-Output "::debug::Downloading JRE installer from: $($installer.installer.link)"
-          Write-Output "::debug::Output file: $outFile"
-
-          Invoke-WebRequest -Uri $installer.installer.link -OutFile $outFile
-
-      - name: Download built cryptad.jar
+      - name: Download cryptad jlink distribution for this arch
         uses: actions/download-artifact@v4
         with:
-          artifact-ids: ${{needs.build-cryptad.outputs.artifact-id}}
+          name: cryptad-jlink-${{ env.RUNTIME_IDENTIFIER }}
           path: ${{ github.workspace }}\artifacts
-          merge-multiple: true
 
-      - name: Download built CryptaTray.exe and CryptaTray.dll.config
-        uses: actions/download-artifact@v4
-        with:
-          artifact-ids: ${{fromJSON(needs.build-wintray.outputs.artifact-map)[format('wintray-{0}', env.RUNTIME_IDENTIFIER)]}}
-          path: ${{ github.workspace }}\artifacts
-          merge-multiple: true
+      # Wintray artifacts are no longer needed
 
-      # The source code of cryptad is required to fetch dependent JAR files
-      - name: Checkout cryptad source code
-        uses: actions/checkout@v4
-        with:
-          repository: crypta-network/cryptad
-          ref: ${{ inputs.cryptad-git-ref }}
-          path: cryptad
-          fetch-depth: 0
+      # No cryptad checkout required for jlink installer
 
       - uses: gradle/actions/wrapper-validation@v4
 
-      - name: Unzip and update setup files
+      - name: Unpack jlink and update setup files
         run: |
-          .\gradlew.bat unzip
+          .\gradlew.bat unpackJlink
           .\gradlew.bat updateSetupFile
 
       - name: Building the installer
