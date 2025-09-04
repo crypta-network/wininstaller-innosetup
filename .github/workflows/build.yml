@@ -39,7 +39,6 @@ jobs:
         uses: gradle/actions/setup-gradle@v4
         with:
           cache-read-only: ${{ github.event_name == 'pull_request' }}
-          build-root-directory: cryptad
 
       - name: Build cryptad (jlink dist)
         shell: pwsh
@@ -92,7 +91,8 @@ jobs:
           Write-Host "[dbg] Listing distDir (top-level):"
           Get-ChildItem -Path $distDir | Select-Object Name,FullName,LastWriteTime,Attributes | Out-String | Write-Host
           $img = Get-ChildItem -Path $distDir -Directory -ErrorAction SilentlyContinue |
-            Where-Object { Test-Path (Join-Path $_.FullName 'bin') -and (Test-Path (Join-Path $_.FullName 'lib')) } |
+            Where-Object { Test-Path (Join-Path $_.FullName 'bin') } |
+            Where-Object { Test-Path (Join-Path $_.FullName 'lib') } |
             Sort-Object LastWriteTime -Descending | Select-Object -First 1
           if ($img) { Write-Host "[dbg] Found unpacked jlink image dir: $($img.FullName)" }
 
@@ -101,9 +101,15 @@ jobs:
             # Maybe packaged as an archive; try .tar.gz, .tar, then .zip
             Write-Host "[dbg] No unpacked image found. Searching for archives in $distDir ..."
             Get-ChildItem -Path $distDir -File | Select-Object Name,Length,LastWriteTime | Out-String | Write-Host
-            # PowerShell quirk: -Include requires wildcard in -Path or -Recurse
-            $archive = Get-ChildItem -Path (Join-Path $distDir '*') -File -Include *.tar.gz,*.tgz,*.tar,*.zip -ErrorAction SilentlyContinue |
+            # Prefer jlink archives first, then fall back to any archive
+            $archive = Get-ChildItem -Path (Join-Path $distDir '*') -File -ErrorAction SilentlyContinue |
+              Where-Object { $_.Name -match '^cryptad-jlink-.*\.(tar\.gz|tgz|zip|tar)$' } |
               Sort-Object LastWriteTime -Descending | Select-Object -First 1
+            if (-not $archive) {
+              # PowerShell quirk: -Include requires wildcard in -Path or -Recurse
+              $archive = Get-ChildItem -Path (Join-Path $distDir '*') -File -Include *.tar.gz,*.tgz,*.tar,*.zip -ErrorAction SilentlyContinue |
+                Sort-Object LastWriteTime -Descending | Select-Object -First 1
+            }
             if (-not $archive) {
               Write-Host "[dbg] No archives matched in $distDir. Showing recursive file listing (depth 2):"
               Get-ChildItem -Path $distDir -Recurse -Depth 2 -File | Select-Object FullName,Length,LastWriteTime | Out-String | Write-Host
@@ -124,7 +130,8 @@ jobs:
             Write-Host "[dbg] Extraction complete. Listing extract root: $($tempExtract.FullName)"
             Get-ChildItem -Path $tempExtract.FullName -Depth 2 | Select-Object FullName,LastWriteTime | Out-String | Write-Host
             $img = Get-ChildItem -Path $tempExtract.FullName -Recurse -Directory -Depth 2 -ErrorAction SilentlyContinue |
-              Where-Object { Test-Path (Join-Path $_.FullName 'bin') -and (Test-Path (Join-Path $_.FullName 'lib')) } |
+              Where-Object { Test-Path (Join-Path $_.FullName 'bin') } |
+              Where-Object { Test-Path (Join-Path $_.FullName 'lib') } |
               Sort-Object FullName | Select-Object -First 1
           }
 
