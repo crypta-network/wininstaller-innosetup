@@ -33,14 +33,17 @@ jobs:
           repository: crypta-network/cryptad
           ref: ${{ inputs.cryptad-git-ref }}
           fetch-depth: 0
+          path: cryptad
 
       - name: Cache Gradle
         uses: gradle/actions/setup-gradle@v4
         with:
           cache-read-only: ${{ github.event_name == 'pull_request' }}
+          build-root-directory: cryptad
 
       - name: Build cryptad (jlink dist)
         shell: pwsh
+        working-directory: cryptad
         run: |
           ./gradlew.bat --version
           ./gradlew.bat build --no-daemon --stacktrace
@@ -49,7 +52,7 @@ jobs:
         shell: pwsh
         id: pack
         run: |
-          $root    = Get-Location
+          $root = Join-Path $env:GITHUB_WORKSPACE 'cryptad'
           $distDir = Join-Path $root 'build/distributions'
           $libsDir = Join-Path $root 'build/libs'
 
@@ -76,15 +79,20 @@ jobs:
 
           $tempExtract = $null
           if (-not $img) {
-            # Maybe packaged as an archive; try .tar.gz then .zip
-            $archive = Get-ChildItem -Path $distDir -File -Include *.tar.gz,*.zip -ErrorAction SilentlyContinue |
+            # Maybe packaged as an archive; try .tar.gz, .tar, then .zip
+            $archive = Get-ChildItem -Path $distDir -File -Include *.tar.gz,*.tgz,*.tar,*.zip -ErrorAction SilentlyContinue |
               Sort-Object LastWriteTime -Descending | Select-Object -First 1
-            if (-not $archive) { Write-Error "No jlink image or archive found in $distDir"; exit 1 }
+            if (-not $archive) { Write-Error "No jlink image or archive found under any build/ directory"; exit 1 }
             $tempExtract = New-Item -ItemType Directory -Path (Join-Path $env:RUNNER_TEMP 'cryptad_jlink') -Force
-            if ($archive.Extension -ieq '.zip') {
+            $name = $archive.Name.ToLowerInvariant()
+            if ($name -like '*.zip') {
               Expand-Archive -Path $archive.FullName -DestinationPath $tempExtract.FullName -Force
-            } else {
+            } elseif ($name -like '*.tar.gz' -or $name -like '*.tgz') {
               tar -xzf $archive.FullName -C $tempExtract.FullName
+            } elseif ($name -like '*.tar') {
+              tar -xf $archive.FullName -C $tempExtract.FullName
+            } else {
+              Write-Error "Unsupported archive format: $name"; exit 1
             }
             $img = Get-ChildItem -Path $tempExtract.FullName -Recurse -Directory -Depth 2 -ErrorAction SilentlyContinue |
               Where-Object { Test-Path (Join-Path $_.FullName 'bin') -and (Test-Path (Join-Path $_.FullName 'lib')) } |
