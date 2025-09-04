@@ -101,7 +101,8 @@ jobs:
             # Maybe packaged as an archive; try .tar.gz, .tar, then .zip
             Write-Host "[dbg] No unpacked image found. Searching for archives in $distDir ..."
             Get-ChildItem -Path $distDir -File | Select-Object Name,Length,LastWriteTime | Out-String | Write-Host
-            $archive = Get-ChildItem -Path $distDir -File -Include *.tar.gz,*.tgz,*.tar,*.zip -ErrorAction SilentlyContinue |
+            # PowerShell quirk: -Include requires wildcard in -Path or -Recurse
+            $archive = Get-ChildItem -Path (Join-Path $distDir '*') -File -Include *.tar.gz,*.tgz,*.tar,*.zip -ErrorAction SilentlyContinue |
               Sort-Object LastWriteTime -Descending | Select-Object -First 1
             if (-not $archive) {
               Write-Host "[dbg] No archives matched in $distDir. Showing recursive file listing (depth 2):"
