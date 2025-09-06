@@ -35,6 +35,9 @@ InternalCompressLevel=ultra
 RestartIfNeededByRun=False
 AllowUNCPath=False
 AllowNoIcons=yes
+UsePreviousAppDir=yes
+CloseApplications=yes
+CloseApplicationsFilter=Crypta.exe
 ;Prevent installer from being run multiple times in parallel
 SetupMutex=SetupMutex{#SetupSetting("AppId")}
 
