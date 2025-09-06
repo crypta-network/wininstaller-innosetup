@@ -17,24 +17,44 @@ val cryptadVersion = objects.property<String>()
 
 tasks.register("stageJpackage") {
     description = "Stage jpackage app image from :cryptad into ./jpackage (or use pre-staged directory)"
-    inputs.dir(jpackageSrcDir)
+    // Do not declare src as an input dir because it may not exist in CI (we download into ./jpackage)
     outputs.dir(jpackageStageDir)
     doLast {
         val src = jpackageSrcDir.asFile
         val dst = jpackageStageDir.asFile
-        when {
-            src.exists() -> {
-                println("Staging jpackage from ${src}")
-                delete(dst)
-                copy {
-                    from(src)
-                    into(dst)
-                }
+
+        fun hasImageRoot(dir: java.io.File): Boolean =
+            java.io.File(dir, "Crypta.exe").exists() &&
+            java.io.File(dir, "app").isDirectory &&
+            java.io.File(dir, "runtime").isDirectory
+
+        // Try to ensure dst contains the image root (Crypta.exe + app + runtime)
+        val candidate: java.io.File? = when {
+            hasImageRoot(src) -> src
+            hasImageRoot(java.io.File(src, "Crypta")) -> java.io.File(src, "Crypta")
+            hasImageRoot(dst) -> null // already staged correctly
+            hasImageRoot(java.io.File(dst, "Crypta")) -> java.io.File(dst, "Crypta")
+            else -> {
+                val onlyChild = dst.listFiles()?.singleOrNull { it.isDirectory }
+                if (onlyChild != null && hasImageRoot(onlyChild)) onlyChild else null
             }
-            dst.exists() -> {
-                println("Source not found; using already-staged jpackage at ${dst}")
+        }
+
+        if (candidate == null) {
+            if (hasImageRoot(dst)) {
+                println("jpackage already staged at ${dst}")
+            } else {
+                error("Could not locate a valid jpackage image. Looked in '${src}', '${java.io.File(src, "Crypta")}', '${dst}', '${java.io.File(dst, "Crypta")}'.")
             }
-            else -> error("Neither ${src} nor ${dst} exists. Build :cryptad or download jpackage artifact.")
+        } else if (candidate == dst) {
+            println("jpackage already staged at ${dst}")
+        } else {
+            println("Staging jpackage from ${candidate} -> ${dst}")
+            delete(dst)
+            copy {
+                from(candidate)
+                into(dst)
+            }
         }
     }
 }
@@ -42,8 +62,8 @@ tasks.register("stageJpackage") {
 tasks.register("buildInfo") {
     dependsOn("stageJpackage")
     doLast {
-        // Extract version from the staged jpackage app image manifest
-        val jarFile = jpackageStageDir.file("app/bootstrap.jar").asFile
+        // Extract version from the staged jpackage app image manifest (cryptad.jar)
+        val jarFile = jpackageStageDir.file("app/cryptad-dist/lib/cryptad.jar").asFile
         val impl = try {
             if (jarFile.exists()) {
                 JarFile(jarFile).use { jf ->
@@ -61,9 +81,9 @@ tasks.register("buildInfo") {
             val g = parts.getOrNull(1)?.trim().orEmpty()
             (v.ifBlank { "@unknown@" } to g.ifBlank { "unknown" })
         }
-        val combined = "v${'$'}verNum+${'$'}gitRev"
+        val combined = "v${verNum}+${gitRev}"
         cryptadVersion.set(combined)
-        println("Cryptad version (from manifest): ${'$'}combined (raw='${'$'}impl')")
+        println("Cryptad version (from manifest): ${combined} (raw='${impl}')")
     }
 }
 
@@ -74,7 +94,7 @@ tasks.register("updateSetupFile") {
     doLast {
         val version = cryptadVersion.orNull ?: "v0+unknown"
         val versionFile = versionIss.asFile
-        versionFile.writeText("#define AppVersion \"${'$'}version\"\r\n")
+        versionFile.writeText("#define AppVersion \"${version}\"\r\n")
         println("Wrote ${versionFile}")
     }
 }
