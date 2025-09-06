@@ -40,40 +40,19 @@ jobs:
         with:
           cache-read-only: ${{ github.event_name == 'pull_request' }}
 
-      - name: Build cryptad (jlink dist)
+      - name: Build cryptad (produces jpackage image)
         shell: pwsh
         working-directory: cryptad
         run: |
           ./gradlew.bat --version
           ./gradlew.bat build --stacktrace -x spotlessApply -x spotlessCheck -x spotlessJava -x spotlessJavaApply -x spotlessJavaCheck -x spotlessKotlin -x spotlessKotlinApply -x spotlessKotlinCheck -x spotlessKotlinGradle -x spotlessKotlinGradleApply -x spotlessInternalRegisterDependencies
-
-      - name: Locate jlink image archive
-        shell: pwsh
-        id: pack
-        run: |
-          $root     = Join-Path $env:GITHUB_WORKSPACE 'cryptad'
-          $distDir  = Join-Path $root 'build/distributions'
-          $pattern  = 'cryptad-jlink-v*.tar.gz'
-
-          if (-not (Test-Path $distDir -PathType Container)) {
-            Write-Error "Missing distributions dir: $distDir"; exit 1
-          }
-
-          $tar = Get-ChildItem -Path $distDir -Filter $pattern -File |
-                   Sort-Object LastWriteTime -Descending |
-                   Select-Object -First 1
-
-          if (-not $tar) { Write-Error "Could not find $pattern in $distDir"; exit 1 }
-
-          echo "archive_path=$($tar.FullName)" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
-
-      - name: Upload jlink artifact
+      - name: Upload jpackage image
         uses: actions/upload-artifact@v4
         with:
-          name: cryptad-jlink-${{ env.RUNTIME_IDENTIFIER }}
-          path: ${{ steps.pack.outputs.archive_path }}
+          name: cryptad-jpackage-${{ env.RUNTIME_IDENTIFIER }}
+          path: cryptad/build/jpackage/Crypta
 
-  # Wintray no longer required with jlink launcher
+  # Wintray not required with jpackage launcher
 
   build:
     needs: [build-cryptad]
@@ -99,23 +78,22 @@ jobs:
         with:
           repository: crypta-network/wininstaller-innosetup
 
-      # JRE no longer needed with jlink distribution
-
-      - name: Download cryptad jlink distribution for this arch
+      # Download cryptad jpackage image for this arch
+      - name: Download cryptad jpackage image for this arch
         uses: actions/download-artifact@v4
         with:
-          name: cryptad-jlink-${{ env.RUNTIME_IDENTIFIER }}
-          path: ${{ github.workspace }}\artifacts
+          name: cryptad-jpackage-${{ env.RUNTIME_IDENTIFIER }}
+          path: ${{ github.workspace }}\jpackage
 
       # Wintray artifacts are no longer needed
 
-      # No cryptad checkout required for jlink installer
+      # No cryptad checkout required for jpackage installer (we use the downloaded image)
 
       - uses: gradle/actions/wrapper-validation@v4
 
-      - name: Unpack jlink and update setup files
+      - name: Stage jpackage and update setup files
         run: |
-          .\gradlew.bat unpackJlink
+          .\gradlew.bat stageJpackage
           .\gradlew.bat updateSetupFile
 
       - name: Building the installer

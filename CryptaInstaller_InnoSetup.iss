@@ -5,7 +5,7 @@
 #include "cryptad_version.iss"
 #define AppPublisher "crypta.network"
 #define AppURL "https://crypta.network/"
-#define AppExeName "bin\\cryptad-launcher.bat"
+#define AppExeName "Crypta.exe"
 
 [Setup]
 ; NOTE: The value of AppId uniquely identifies this application.
@@ -59,15 +59,10 @@ MinVersion=10.0
 Name: "english"; MessagesFile: "compiler:Default.isl,.\\translations\\Messages_en_utf8.isl"
 
 [Files]
-; DLL used for port checks
-Source: "CryptaInstaller_InnoSetup_library\\CryptaInstaller_InnoSetup_library.dll"; DestDir: "{tmp}"; Flags: ignoreversion dontcopy
-
-; Copy jlink distribution produced by cryptad build
-Source: "artifacts\\cryptad-jlink-dist\\bin\\*"; DestDir: "{app}\\bin"; Flags: ignoreversion recursesubdirs createallsubdirs
-Source: "artifacts\\cryptad-jlink-dist\\lib\\*"; DestDir: "{app}\\lib"; Flags: ignoreversion recursesubdirs createallsubdirs
-Source: "artifacts\\cryptad-jlink-dist\\conf\\*"; DestDir: "{app}\\conf"; Flags: ignoreversion recursesubdirs createallsubdirs
-Source: "artifacts\\cryptad-jlink-dist\\legal\\*"; DestDir: "{app}\\legal"; Flags: ignoreversion recursesubdirs createallsubdirs
-Source: "artifacts\\cryptad-jlink-dist\\release"; DestDir: "{app}"; Flags: ignoreversion; AfterInstall: CryptadJarDoAfterInstall
+; Copy jpackage app image placed in project root under jpackage/
+Source: "jpackage\\Crypta.exe"; DestDir: "{app}"; Flags: ignoreversion
+Source: "jpackage\\app\\*"; DestDir: "{app}\\app"; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "jpackage\\runtime\\*"; DestDir: "{app}\\runtime"; Flags: ignoreversion recursesubdirs createallsubdirs
 
 ; Optional: top-level README/licenses shipped with installer if any
 Source: "install_node\\README.txt"; DestDir: "{app}"; Flags: ignoreversion skipifsourcedoesntexist
@@ -90,25 +85,6 @@ Filename: "{app}\\{#AppExeName}"; Flags: nowait postinstall skipifsilent shellex
 Type: filesandordirs; Name: "{app}\\*"
 
 [Code]
-var
-  sFproxyPort, sFcpPort: string;
-
-function IsPortAvailable(sIpAddress: ansistring; wPort: word): boolean;
-  external 'fIsPortAvailable@files:CryptaInstaller_InnoSetup_library.dll stdcall setuponly';
-
-procedure CryptadJarDoAfterInstall();
-var
-  sConfigLines : array[0..3] of string;
-begin
-  if not FileExists(ExpandConstant('{app}\\cryptad.ini')) then begin
-    sConfigLines[0] := 'fproxy.port=' + sFproxyPort;
-    sConfigLines[1] := 'fcp.port=' + sFcpPort;
-    sConfigLines[2] := 'node.downloadsDir=.\\downloads';
-    sConfigLines[3] := 'End';
-    SaveStringsToUTF8File(ExpandConstant('{app}\\cryptad.ini'), sConfigLines, False);
-  end;
-end;
-
 function InitializeSetup: boolean;
 var 
   RegKey: string;
@@ -146,31 +122,4 @@ begin
       end;
     end;
   end;
-end;
-
-procedure InitializeWizard;
-var
-  iFproxyPort, iFcpPort : integer;
-begin
-  iFproxyPort := 8888;
-  repeat
-    if IsPortAvailable('127.0.0.1', iFproxyPort) then
-      Break
-    else begin
-      iFproxyPort := iFproxyPort + 1;
-      Continue;
-    end;
-  until iFproxyPort = 8888 + 256;
-  sFproxyPort := IntToStr(iFproxyPort);
-
-  iFcpPort := 9481;
-  repeat
-    if IsPortAvailable('127.0.0.1', iFcpPort) then
-      Break
-    else begin
-      iFcpPort := iFcpPort + 1;
-      Continue;
-    end;
-  until iFcpPort = 9481 + 256;
-  sFcpPort := IntToStr(iFcpPort);
 end;

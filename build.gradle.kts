@@ -1,4 +1,4 @@
-// build.gradle.kts (jlink-based installer)
+// build.gradle.kts (jpackage-based installer)
 import java.io.IOException
 import java.util.jar.JarFile
 
@@ -7,34 +7,43 @@ plugins {
 }
 
 val versionIss = layout.projectDirectory.file("cryptad_version.iss")
-val jlinkTarDir = layout.projectDirectory.dir("artifacts")
-val jlinkOutDir = layout.projectDirectory.dir("artifacts/cryptad-jlink-dist")
+// Source jpackage app image produced by the :cryptad build
+val jpackageSrcDir = layout.projectDirectory.dir("cryptad/build/jpackage/Crypta")
+// Staging dir used by Inno Setup script (matches CryptaInstaller_InnoSetup.iss)
+val jpackageStageDir = layout.projectDirectory.dir("jpackage")
 
 // Shared property to pass the computed version between tasks
 val cryptadVersion = objects.property<String>()
 
-tasks.register("unpackJlink") {
-    inputs.files(fileTree(jlinkTarDir) { include("cryptad-jlink-*.tar.gz") })
-    outputs.dir(jlinkOutDir)
+tasks.register("stageJpackage") {
+    description = "Stage jpackage app image from :cryptad into ./jpackage (or use pre-staged directory)"
+    inputs.dir(jpackageSrcDir)
+    outputs.dir(jpackageStageDir)
     doLast {
-        val fromArtifacts = fileTree(jlinkTarDir) { include("cryptad-jlink-*.tar.gz") }.files
-        val fromRoot = fileTree(layout.projectDirectory) { include("cryptad-jlink-*.tar.gz") }.files
-        val tars = (fromArtifacts + fromRoot).toSet()
-        if (tars.isEmpty()) error("No cryptad-jlink-*.tar.gz found in ${jlinkTarDir.asFile} or project root")
-        val newest = tars.maxByOrNull { it.lastModified() }!!
-        println("Unpacking jlink: ${newest.name}")
-        delete(jlinkOutDir)
-        copy {
-            from(tarTree(resources.gzip(newest)))
-            into(jlinkOutDir)
+        val src = jpackageSrcDir.asFile
+        val dst = jpackageStageDir.asFile
+        when {
+            src.exists() -> {
+                println("Staging jpackage from ${src}")
+                delete(dst)
+                copy {
+                    from(src)
+                    into(dst)
+                }
+            }
+            dst.exists() -> {
+                println("Source not found; using already-staged jpackage at ${dst}")
+            }
+            else -> error("Neither ${src} nor ${dst} exists. Build :cryptad or download jpackage artifact.")
         }
     }
 }
 
 tasks.register("buildInfo") {
-    dependsOn("unpackJlink")
+    dependsOn("stageJpackage")
     doLast {
-        val jarFile = jlinkOutDir.file("lib/cryptad.jar").asFile
+        // Extract version from the staged jpackage app image manifest
+        val jarFile = jpackageStageDir.file("app/bootstrap.jar").asFile
         val impl = try {
             if (jarFile.exists()) {
                 JarFile(jarFile).use { jf ->

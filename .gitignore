@@ -15,3 +15,5 @@
 cryptad-*
 _jlink/
 _cryptad.jar
+/jpackage/
+Thumbs.db
