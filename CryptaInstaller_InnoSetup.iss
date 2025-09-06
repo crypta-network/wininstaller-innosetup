@@ -37,7 +37,8 @@ AllowUNCPath=False
 AllowNoIcons=yes
 UsePreviousAppDir=yes
 CloseApplications=yes
-CloseApplicationsFilter=Crypta.exe
+CloseApplicationsFilter=*.dll,*.jar
+CloseApplicationsFilterExcludes=Crypta.exe
 ;Prevent installer from being run multiple times in parallel
 SetupMutex=SetupMutex{#SetupSetting("AppId")}
 
@@ -125,4 +126,16 @@ begin
       end;
     end;
   end;
+end;
+
+procedure RegisterExtraCloseApplicationsResources;
+begin
+  RegisterExtraCloseApplicationsResource(False,
+    ExpandConstant('{app}\runtime\bin\server\jvm.dll'));     // always present/locked by JVM
+  RegisterExtraCloseApplicationsResource(False,
+    ExpandConstant('{app}\app\cryptad-dist\lib\cryptad.jar'));        // your main JAR
+  RegisterExtraCloseApplicationsResource(False,
+    ExpandConstant('{app}\app\cryptad-dist\bin\wrapper-windows-arm-64.exe'));
+  RegisterExtraCloseApplicationsResource(False,
+    ExpandConstant('{app}\app\cryptad-dist\bin\wrapper-windows-x86-64.exe'));
 end;
