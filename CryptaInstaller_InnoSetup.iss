@@ -5,13 +5,13 @@
 #include "cryptad_version.iss"
 #define AppPublisher "crypta.network"
 #define AppURL "https://crypta.network/"
-#define AppExeName "bin\\cryptad-launcher.bat"
+#define AppExeName "Crypta.exe"
 
 [Setup]
 ; NOTE: The value of AppId uniquely identifies this application.
 ; Do not use the same AppId value in installers for other applications.
 ; (To generate a new GUID, click Tools | Generate GUID inside the IDE.)
-AppId={{FDB7C786-8205-4D04-A6B2-4159119EC892}
+AppId={{FDB7C786-8205-4D04-A6B2-4159119EC892}}
 AppName={#AppName}
 AppVersion={#AppVersion}
 AppPublisher={#AppPublisher}
@@ -35,6 +35,9 @@ InternalCompressLevel=ultra
 RestartIfNeededByRun=False
 AllowUNCPath=False
 AllowNoIcons=yes
+UsePreviousAppDir=yes
+CloseApplications=yes
+CloseApplicationsFilter=awt.dll
 ;Prevent installer from being run multiple times in parallel
 SetupMutex=SetupMutex{#SetupSetting("AppId")}
 
@@ -59,15 +62,10 @@ MinVersion=10.0
 Name: "english"; MessagesFile: "compiler:Default.isl,.\\translations\\Messages_en_utf8.isl"
 
 [Files]
-; DLL used for port checks
-Source: "CryptaInstaller_InnoSetup_library\\CryptaInstaller_InnoSetup_library.dll"; DestDir: "{tmp}"; Flags: ignoreversion dontcopy
-
-; Copy jlink distribution produced by cryptad build
-Source: "artifacts\\cryptad-jlink-dist\\bin\\*"; DestDir: "{app}\\bin"; Flags: ignoreversion recursesubdirs createallsubdirs
-Source: "artifacts\\cryptad-jlink-dist\\lib\\*"; DestDir: "{app}\\lib"; Flags: ignoreversion recursesubdirs createallsubdirs
-Source: "artifacts\\cryptad-jlink-dist\\conf\\*"; DestDir: "{app}\\conf"; Flags: ignoreversion recursesubdirs createallsubdirs
-Source: "artifacts\\cryptad-jlink-dist\\legal\\*"; DestDir: "{app}\\legal"; Flags: ignoreversion recursesubdirs createallsubdirs
-Source: "artifacts\\cryptad-jlink-dist\\release"; DestDir: "{app}"; Flags: ignoreversion; AfterInstall: CryptadJarDoAfterInstall
+; Copy jpackage app image placed in project root under jpackage/
+Source: "jpackage\\Crypta.exe"; DestDir: "{app}"; Flags: ignoreversion
+Source: "jpackage\\app\\*"; DestDir: "{app}\\app"; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "jpackage\\runtime\\*"; DestDir: "{app}\\runtime"; Flags: ignoreversion recursesubdirs createallsubdirs
 
 ; Optional: top-level README/licenses shipped with installer if any
 Source: "install_node\\README.txt"; DestDir: "{app}"; Flags: ignoreversion skipifsourcedoesntexist
@@ -75,7 +73,7 @@ Source: "install_node\\licenses\\*"; DestDir: "{app}\\licenses"; Flags: ignoreve
 Source: "resources\\CryptaInstaller_InnoSetup_Uninstall.ico"; DestDir: "{app}"; Flags: ignoreversion
 
 [Tasks]
-Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{cm:AdditionalIcons}"; Flags: unchecked
+Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{cm:AdditionalIcons}"; Flags: checkedonce
 
 [Icons]
 Name: "{group}\\{#AppName}"; Filename: "{app}\\{#AppExeName}"
@@ -90,87 +88,43 @@ Filename: "{app}\\{#AppExeName}"; Flags: nowait postinstall skipifsilent shellex
 Type: filesandordirs; Name: "{app}\\*"
 
 [Code]
+procedure CurUninstallStepChanged(CurUninstallStep: TUninstallStep);
 var
-  sFproxyPort, sFcpPort: string;
-
-function IsPortAvailable(sIpAddress: ansistring; wPort: word): boolean;
-  external 'fIsPortAvailable@files:CryptaInstaller_InnoSetup_library.dll stdcall setuponly';
-
-procedure CryptadJarDoAfterInstall();
-var
-  sConfigLines : array[0..3] of string;
+  ResultCode: Integer;
+  PSPath, PS: string;
 begin
-  if not FileExists(ExpandConstant('{app}\\cryptad.ini')) then begin
-    sConfigLines[0] := 'fproxy.port=' + sFproxyPort;
-    sConfigLines[1] := 'fcp.port=' + sFcpPort;
-    sConfigLines[2] := 'node.downloadsDir=.\\downloads';
-    sConfigLines[3] := 'End';
-    SaveStringsToUTF8File(ExpandConstant('{app}\\cryptad.ini'), sConfigLines, False);
-  end;
-end;
+  // Run only after user confirmed uninstall
+  if CurUninstallStep <> usUninstall then
+    exit;
 
-function InitializeSetup: boolean;
-var 
-  RegKey: string;
-  ExistingInstallation: Boolean;
-  RegistryLocationRootKey: Integer;
-  ExistingInstallationPath : string;
-begin
-  result := true;
-  ExistingInstallation := false;
-  
-  RegKey := ExpandConstant('Software\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\{#SetupSetting("AppId")}_is1');
+  try
+    Log('CurUninstallStepChanged: preparing PowerShell child-process kill');
+    PSPath := ExpandConstant('{tmp}\\crypta_kill_child.ps1');
+    PS :=
+      '$procs = Get-CimInstance Win32_Process -Filter "Name = ''Crypta.exe''";' + #13#10 +
+      '$pids = $procs | Select-Object -ExpandProperty ProcessId;' + #13#10 +
+      '$child = $procs | Where-Object { $pids -contains $_.ParentProcessId } | Select-Object -First 1;' + #13#10 +
+      'if ($child) { & taskkill /PID $($child.ProcessId) | Out-Null; try { Wait-Process -Id $($child.ProcessId) -Timeout 20 } catch {} }';
 
-  if RegKeyExists(HKLM, RegKey) then begin 
-    ExistingInstallation := true;
-    RegistryLocationRootKey := HKLM;
-  end;
-  if RegKeyExists(HKCU, RegKey) then begin 
-    ExistingInstallation := true;
-    RegistryLocationRootKey := HKCU;
-  end;
-  if RegKeyExists(HKU, RegKey) then begin 
-    ExistingInstallation := true;
-    RegistryLocationRootKey := HKU;
-  end;
-
-  if ExistingInstallation then begin
-    if RegQueryStringValue(RegistryLocationRootKey, RegKey, 'InstallLocation', ExistingInstallationPath) then begin
-      case MsgBox(CustomMessage('ErrorCryptaAlreadyInstalled'), mbError, MB_YESNO) of
-        IDYES: begin
-          result := True; // overwrite in-place
-        end;
-        IDNO: begin
-          result := False;
-        end;
+    if not SaveStringToFile(PSPath, PS, False) then
+    begin
+      Log('CurUninstallStepChanged: failed to write temporary PowerShell script');
+    end
+    else
+    begin
+      if not Exec(ExpandConstant('{sys}\\WindowsPowerShell\\v1.0\\powershell.exe'),
+                  '-NoLogo -NoProfile -ExecutionPolicy Bypass -File ' + AddQuotes(PSPath),
+                  '', SW_HIDE, ewWaitUntilTerminated, ResultCode) then
+      begin
+        Log('CurUninstallStepChanged: PowerShell exec failed');
+      end
+      else
+      begin
+        Log('CurUninstallStepChanged: PowerShell exited with code ' + IntToStr(ResultCode));
       end;
+      DeleteFile(PSPath);
     end;
+  except
+    Log('CurUninstallStepChanged: exception while running PowerShell');
   end;
-end;
-
-procedure InitializeWizard;
-var
-  iFproxyPort, iFcpPort : integer;
-begin
-  iFproxyPort := 8888;
-  repeat
-    if IsPortAvailable('127.0.0.1', iFproxyPort) then
-      Break
-    else begin
-      iFproxyPort := iFproxyPort + 1;
-      Continue;
-    end;
-  until iFproxyPort = 8888 + 256;
-  sFproxyPort := IntToStr(iFproxyPort);
-
-  iFcpPort := 9481;
-  repeat
-    if IsPortAvailable('127.0.0.1', iFcpPort) then
-      Break
-    else begin
-      iFcpPort := iFcpPort + 1;
-      Continue;
-    end;
-  until iFcpPort = 9481 + 256;
-  sFcpPort := IntToStr(iFcpPort);
 end;
