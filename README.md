@@ -26,8 +26,8 @@ Quick start (local build)
 4) Output is written to `Output/CryptaInstaller.exe`.
 
 CI builds
-- Reusable workflow: `.github/workflows/build.yml` (callable from other repos and also runnable manually from Actions).
-- Dispatcher for manual runs in this repo: `.github/workflows/build_dispatch.yml` (optional; kept for convenience).
+- Reusable workflow: `.github/workflows/build.yml` (callable from other repos via `workflow_call`).
+- Manual runs in this repo: `.github/workflows/build_dispatch.yml`.
 - Inputs:
   - `cryptad-git-ref` (default `main`), `jdk-version` (default `21`), `os-matrix` (default `windows-latest` and `windows-11-arm`).
 - Artifacts: `cryptad-jpackage-<arch>` (from the build job) and `cryptainstaller-<arch>` (installer).

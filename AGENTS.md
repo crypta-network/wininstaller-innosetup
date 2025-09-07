@@ -5,7 +5,8 @@
 - `install_node/`: Minimal README and licenses bundled alongside the app image.
 - `resources/`, `translations/`: Icons/bitmaps and localized messages.
 - `build.gradle.kts`, `settings.gradle`, `gradlew*`: Gradle tasks (`stageJpackage`, `updateSetupFile`) that stage the jpackage app image and derive the app version.
-- `.github/workflows/build.yml`: Reusable CI workflow that builds the jpackage image and packages x64/arm64 installers on Windows runners. It can also be run manually from Actions.
+- `.github/workflows/build.yml`: Reusable CI workflow that builds the jpackage image and packages x64/arm64 installers on Windows runners (called via `workflow_call`).
+- `.github/workflows/build_dispatch.yml`: Thin dispatcher workflow to run packaging manually from Actions.
 
 ## Build, Test, and Development Commands
 - Prereqs (Windows): Inno Setup 6 (`iscc.exe` on PATH), JDK 21, Git. For Linux, use Wine to run `iscc`.
