@@ -1,0 +1,22 @@
+name: Build Crypta Installer
+
+on:
+  workflow_dispatch:
+    inputs:
+      cryptad-git-ref:
+        description: Cryptad git ref (branch, tag or SHA)
+        type: string
+        default: main
+      jdk-version:
+        description: JDK major version to use (Temurin)
+        type: string
+        default: "21"
+
+jobs:
+  call-reusable:
+    uses: ./.github/workflows/build.yml
+    with:
+      cryptad-git-ref: ${{ inputs.cryptad-git-ref }}
+      jdk-version: ${{ inputs.jdk-version }}
+      os-matrix: '["windows-latest","windows-11-arm"]'
+      upload-installer: true
