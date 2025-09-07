@@ -88,3 +88,43 @@ Filename: "{app}\\{#AppExeName}"; Flags: nowait postinstall skipifsilent shellex
 Type: filesandordirs; Name: "{app}\\*"
 
 [Code]
+procedure CurUninstallStepChanged(CurUninstallStep: TUninstallStep);
+var
+  ResultCode: Integer;
+  PSPath, PS: string;
+begin
+  // Run only after user confirmed uninstall
+  if CurUninstallStep <> usUninstall then
+    exit;
+
+  try
+    Log('CurUninstallStepChanged: preparing PowerShell child-process kill');
+    PSPath := ExpandConstant('{tmp}\\crypta_kill_child.ps1');
+    PS :=
+      '$procs = Get-CimInstance Win32_Process -Filter "Name = ''Crypta.exe''";' + #13#10 +
+      '$pids = $procs | Select-Object -ExpandProperty ProcessId;' + #13#10 +
+      '$child = $procs | Where-Object { $pids -contains $_.ParentProcessId } | Select-Object -First 1;' + #13#10 +
+      'if ($child) { & taskkill /PID $($child.ProcessId) | Out-Null; try { Wait-Process -Id $($child.ProcessId) -Timeout 20 } catch {} }';
+
+    if not SaveStringToFile(PSPath, PS, False) then
+    begin
+      Log('CurUninstallStepChanged: failed to write temporary PowerShell script');
+    end
+    else
+    begin
+      if not Exec(ExpandConstant('{sys}\\WindowsPowerShell\\v1.0\\powershell.exe'),
+                  '-NoLogo -NoProfile -ExecutionPolicy Bypass -File ' + AddQuotes(PSPath),
+                  '', SW_HIDE, ewWaitUntilTerminated, ResultCode) then
+      begin
+        Log('CurUninstallStepChanged: PowerShell exec failed');
+      end
+      else
+      begin
+        Log('CurUninstallStepChanged: PowerShell exited with code ' + IntToStr(ResultCode));
+      end;
+      DeleteFile(PSPath);
+    end;
+  except
+    Log('CurUninstallStepChanged: exception while running PowerShell');
+  end;
+end;
