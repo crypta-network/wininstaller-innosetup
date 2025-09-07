@@ -2,19 +2,19 @@
 
 ## Project Structure & Module Organization
 - `CryptaInstaller_InnoSetup.iss`: Main Inno Setup script (includes `cryptad_version.iss`).
-- `CryptaInstaller_InnoSetup_library/`: Lazarus/Pascal DLL used by the installer to check ports and memory.
-- `install_node/`: Minimal runtime/readme/licenses bundled alongside the jlink image.
+- `CryptaInstaller_InnoSetup_library/`: Legacy Lazarus/Pascal DLL (port/memory checks); currently not used by the installer.
+- `install_node/`: Minimal README and licenses bundled alongside the app image.
 - `resources/`, `translations/`: Icons/bitmaps and localized messages.
-- `build.gradle.kts`, `settings.gradle`, `gradlew*`: Gradle tasks (`unpackJlink`, `updateSetupFile`) that unpack the jlink archive and derive the app version.
-- `.github/workflows/build.yml`: Reusable CI workflow that builds jlink and packages x64/arm64 installers on Windows runners.
+- `build.gradle.kts`, `settings.gradle`, `gradlew*`: Gradle tasks (`stageJpackage`, `updateSetupFile`) that stage the jpackage app image and derive the app version.
+- `.github/workflows/build.yml`: Reusable CI workflow that builds the jpackage image and packages x64/arm64 installers on Windows runners.
 
 ## Build, Test, and Development Commands
 - Prereqs (Windows): Inno Setup 6 (`iscc.exe` on PATH), JDK 21, Git. For Linux, use Wine to run `iscc`.
-- Unpack jlink + generate includes: `./gradlew.bat unpackJlink updateSetupFile`
-  - Produces `cryptad_version.iss` from the unpacked jlink (`lib/cryptad.jar`).
+- Stage jpackage + generate includes: `./gradlew.bat stageJpackage updateSetupFile`
+  - Produces `cryptad_version.iss` from the staged image (`app/cryptad-dist/lib/cryptad.jar`).
 - Build installer: `iscc.exe CryptaInstaller_InnoSetup.iss /DArch=x64` (or `/DArch=arm64`)
   - Output: `Output/CryptaInstaller.exe`.
-- CI build (recommended): use “Build Crypta Installer” (`build_dispatch.yml`) which calls the reusable workflow. CI builds the `cryptad` jlink tar on Windows, then runs `iscc` to package installers.
+- CI build (recommended): use “Build Crypta Installer” (`build_dispatch.yml`) which calls the reusable workflow. CI builds the `cryptad` jpackage image on Windows, then runs `iscc` to package installers.
 
 ## Coding Style & Naming Conventions
 - Inno Setup (`.iss`): 2-space indent, PascalCase for identifiers, keep lines ≤ 120 chars, comment with `;`.
@@ -32,5 +32,5 @@
 - PRs: include rationale, linked issues, and any UI screenshots (wizard pages/icons). Confirm local build passes and CI is green for x64 and arm64.
 
 ## Security & Configuration Tips
-- Do not commit secrets or signing material. Keep large binaries out of git; CI builds the jlink image. Prefer updating generated files via Gradle rather than manual copies.
-- Avoid committing jlink archives; place them under `artifacts/` locally or rely on CI artifacts.
+- Do not commit secrets or signing material. Keep large binaries out of git; CI builds the jpackage image. Prefer updating generated files via Gradle rather than manual copies.
+- Avoid committing jpackage images; keep local staging under `jpackage/` or rely on CI artifacts.
