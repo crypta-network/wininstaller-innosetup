@@ -11,7 +11,7 @@
 ; NOTE: The value of AppId uniquely identifies this application.
 ; Do not use the same AppId value in installers for other applications.
 ; (To generate a new GUID, click Tools | Generate GUID inside the IDE.)
-AppId={{FDB7C786-8205-4D04-A6B2-4159119EC892}
+AppId={{FDB7C786-8205-4D04-A6B2-4159119EC892}}
 AppName={#AppName}
 AppVersion={#AppVersion}
 AppPublisher={#AppPublisher}
@@ -37,8 +37,7 @@ AllowUNCPath=False
 AllowNoIcons=yes
 UsePreviousAppDir=yes
 CloseApplications=yes
-CloseApplicationsFilter=*.dll,*.jar
-CloseApplicationsFilterExcludes=Crypta.exe
+CloseApplicationsFilter=awt.dll
 ;Prevent installer from being run multiple times in parallel
 SetupMutex=SetupMutex{#SetupSetting("AppId")}
 
@@ -74,7 +73,7 @@ Source: "install_node\\licenses\\*"; DestDir: "{app}\\licenses"; Flags: ignoreve
 Source: "resources\\CryptaInstaller_InnoSetup_Uninstall.ico"; DestDir: "{app}"; Flags: ignoreversion
 
 [Tasks]
-Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{cm:AdditionalIcons}"; Flags: unchecked
+Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{cm:AdditionalIcons}"; Flags: checkedonce
 
 [Icons]
 Name: "{group}\\{#AppName}"; Filename: "{app}\\{#AppExeName}"
@@ -89,53 +88,3 @@ Filename: "{app}\\{#AppExeName}"; Flags: nowait postinstall skipifsilent shellex
 Type: filesandordirs; Name: "{app}\\*"
 
 [Code]
-function InitializeSetup: boolean;
-var 
-  RegKey: string;
-  ExistingInstallation: Boolean;
-  RegistryLocationRootKey: Integer;
-  ExistingInstallationPath : string;
-begin
-  result := true;
-  ExistingInstallation := false;
-  
-  RegKey := ExpandConstant('Software\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\{#SetupSetting("AppId")}_is1');
-
-  if RegKeyExists(HKLM, RegKey) then begin 
-    ExistingInstallation := true;
-    RegistryLocationRootKey := HKLM;
-  end;
-  if RegKeyExists(HKCU, RegKey) then begin 
-    ExistingInstallation := true;
-    RegistryLocationRootKey := HKCU;
-  end;
-  if RegKeyExists(HKU, RegKey) then begin 
-    ExistingInstallation := true;
-    RegistryLocationRootKey := HKU;
-  end;
-
-  if ExistingInstallation then begin
-    if RegQueryStringValue(RegistryLocationRootKey, RegKey, 'InstallLocation', ExistingInstallationPath) then begin
-      case MsgBox(CustomMessage('ErrorCryptaAlreadyInstalled'), mbError, MB_YESNO) of
-        IDYES: begin
-          result := True; // overwrite in-place
-        end;
-        IDNO: begin
-          result := False;
-        end;
-      end;
-    end;
-  end;
-end;
-
-procedure RegisterExtraCloseApplicationsResources;
-begin
-  RegisterExtraCloseApplicationsResource(False,
-    ExpandConstant('{app}\runtime\bin\server\jvm.dll'));     // always present/locked by JVM
-  RegisterExtraCloseApplicationsResource(False,
-    ExpandConstant('{app}\app\cryptad-dist\lib\cryptad.jar'));        // your main JAR
-  RegisterExtraCloseApplicationsResource(False,
-    ExpandConstant('{app}\app\cryptad-dist\bin\wrapper-windows-arm-64.exe'));
-  RegisterExtraCloseApplicationsResource(False,
-    ExpandConstant('{app}\app\cryptad-dist\bin\wrapper-windows-x86-64.exe'));
-end;
