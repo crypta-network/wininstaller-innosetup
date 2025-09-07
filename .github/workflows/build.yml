@@ -23,6 +23,24 @@ on:
         required: false
         type: boolean
         default: true
+  workflow_dispatch:
+    inputs:
+      cryptad-git-ref:
+        description: Cryptad git ref (branch, tag or SHA)
+        type: string
+        default: main
+      jdk-version:
+        description: Temurin JDK major version
+        type: string
+        default: "21"
+      os-matrix:
+        description: JSON array of Windows runners to build on
+        type: string
+        default: "[\"windows-latest\",\"windows-11-arm\"]"
+      upload-installer:
+        description: Upload the final installer artifact
+        type: boolean
+        default: true
 
 jobs:
   build-cryptad:
