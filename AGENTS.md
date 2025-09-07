@@ -2,7 +2,6 @@
 
 ## Project Structure & Module Organization
 - `CryptaInstaller_InnoSetup.iss`: Main Inno Setup script (includes `cryptad_version.iss`).
-- `CryptaInstaller_InnoSetup_library/`: Legacy Lazarus/Pascal DLL (port/memory checks); currently not used by the installer.
 - `install_node/`: Minimal README and licenses bundled alongside the app image.
 - `resources/`, `translations/`: Icons/bitmaps and localized messages.
 - `build.gradle.kts`, `settings.gradle`, `gradlew*`: Gradle tasks (`stageJpackage`, `updateSetupFile`) that stage the jpackage app image and derive the app version.

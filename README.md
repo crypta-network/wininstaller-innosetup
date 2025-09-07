@@ -4,7 +4,6 @@ This repository contains the Inno Setup–based Windows installer for Crypta. It
 
 What’s here
 - `CryptaInstaller_InnoSetup.iss` — main installer script; stages the jpackage app image (Crypta.exe, app/, runtime/).
-- `CryptaInstaller_InnoSetup_library/` — small Lazarus/Pascal DLL used during setup to check free ports and available memory.
 - `resources/` — icons and wizard images used by the installer UI.
 - `translations/` — localized messages (UTF‑8 for source control; Inno Setup reads them as ANSI at build time).
 - `build.gradle.kts` — Gradle tasks that stage the jpackage image and generate `cryptad_version.iss` used by the script.
