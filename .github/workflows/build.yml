@@ -17,7 +17,7 @@ on:
         description: JSON array of Windows runners to build on
         required: false
         type: string
-        default: "[\"windows-latest\",\"windows-11-arm\"]"
+        default: '["windows-latest","windows-11-arm"]'
       upload-installer:
         description: Upload the final installer artifact
         required: false
@@ -57,7 +57,7 @@ jobs:
         working-directory: cryptad
         run: |
           ./gradlew.bat --version
-          ./gradlew.bat build --stacktrace -x spotlessApply -x spotlessCheck -x spotlessJava -x spotlessJavaApply -x spotlessJavaCheck -x spotlessKotlin -x spotlessKotlinApply -x spotlessKotlinCheck -x spotlessKotlinGradle -x spotlessKotlinGradleApply -x spotlessInternalRegisterDependencies
+          ./gradlew.bat build -x spotlessApply -x spotlessCheck -x spotlessJava -x spotlessJavaApply -x spotlessJavaCheck -x spotlessKotlin -x spotlessKotlinApply -x spotlessKotlinCheck -x spotlessKotlinGradle -x spotlessKotlinGradleApply -x spotlessInternalRegisterDependencies
       - name: Upload jpackage image
         uses: actions/upload-artifact@v4
         with:
