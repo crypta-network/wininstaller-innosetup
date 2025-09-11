@@ -65,7 +65,6 @@ Name: "english"; MessagesFile: "compiler:Default.isl,.\translations\Messages_en_
 ; Copy jpackage app image placed in project root under jpackage/
 Source: "jpackage\Crypta.exe"; DestDir: "{app}"; Flags: ignoreversion
 Source: "jpackage\app\*"; DestDir: "{app}\app"; Flags: ignoreversion recursesubdirs createallsubdirs
-Source: "jpackage\lib\*"; DestDir: "{app}\lib"; Flags: ignoreversion recursesubdirs createallsubdirs
 Source: "jpackage\runtime\*"; DestDir: "{app}\runtime"; Flags: ignoreversion recursesubdirs createallsubdirs
 
 ; Optional: top-level README/licenses shipped with installer if any
