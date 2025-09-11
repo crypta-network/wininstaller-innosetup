@@ -59,33 +59,33 @@ ArchitecturesInstallIn64BitMode=x64compatible
 MinVersion=10.0
 
 [Languages]
-Name: "english"; MessagesFile: "compiler:Default.isl,.\\translations\\Messages_en_utf8.isl"
+Name: "english"; MessagesFile: "compiler:Default.isl,.\translations\Messages_en_utf8.isl"
 
 [Files]
 ; Copy jpackage app image placed in project root under jpackage/
-Source: "jpackage\\Crypta.exe"; DestDir: "{app}"; Flags: ignoreversion
-Source: "jpackage\\app\\*"; DestDir: "{app}\\app"; Flags: ignoreversion recursesubdirs createallsubdirs
-Source: "jpackage\\runtime\\*"; DestDir: "{app}\\runtime"; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "jpackage\Crypta.exe"; DestDir: "{app}"; Flags: ignoreversion
+Source: "jpackage\app\*"; DestDir: "{app}\app"; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "jpackage\runtime\*"; DestDir: "{app}\runtime"; Flags: ignoreversion recursesubdirs createallsubdirs
 
 ; Optional: top-level README/licenses shipped with installer if any
-Source: "install_node\\README.txt"; DestDir: "{app}"; Flags: ignoreversion skipifsourcedoesntexist
-Source: "install_node\\licenses\\*"; DestDir: "{app}\\licenses"; Flags: ignoreversion recursesubdirs createallsubdirs skipifsourcedoesntexist
-Source: "resources\\CryptaInstaller_InnoSetup_Uninstall.ico"; DestDir: "{app}"; Flags: ignoreversion
+Source: "install_node\README.txt"; DestDir: "{app}"; Flags: ignoreversion skipifsourcedoesntexist
+Source: "install_node\licenses\*"; DestDir: "{app}\licenses"; Flags: ignoreversion recursesubdirs createallsubdirs skipifsourcedoesntexist
+Source: "resources\CryptaInstaller_InnoSetup_Uninstall.ico"; DestDir: "{app}"; Flags: ignoreversion
 
 [Tasks]
 Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{cm:AdditionalIcons}"; Flags: checkedonce
 
 [Icons]
-Name: "{group}\\{#AppName}"; Filename: "{app}\\{#AppExeName}"
-Name: "{group}\\{cm:UninstallProgram,{#AppName}}"; Filename: "{uninstallexe}"
-Name: "{autodesktop}\\{#AppName}"; Filename: "{app}\\{#AppExeName}"; Tasks: desktopicon
+Name: "{group}\{#AppName}"; Filename: "{app}\{#AppExeName}"
+Name: "{group}\{cm:UninstallProgram,{#AppName}}"; Filename: "{uninstallexe}"
+Name: "{autodesktop}\{#AppName}"; Filename: "{app}\{#AppExeName}"; Tasks: desktopicon
 
 [Run]
-Filename: "{app}\\{#AppExeName}"; Flags: nowait postinstall skipifsilent shellexec; Description: "{cm:LaunchProgram,{#StringChange(AppName, '&', '&&')}}"
+Filename: "{app}\{#AppExeName}"; Flags: nowait postinstall skipifsilent shellexec; Description: "{cm:LaunchProgram,{#StringChange(AppName, '&', '&&')}}"
 
 [UninstallDelete]
 ; TODO: enumerate expected files instead of wildcard if possible
-Type: filesandordirs; Name: "{app}\\*"
+Type: filesandordirs; Name: "{app}\*"
 
 [Code]
 procedure CurUninstallStepChanged(CurUninstallStep: TUninstallStep);
@@ -99,7 +99,7 @@ begin
 
   try
     Log('CurUninstallStepChanged: preparing PowerShell child-process kill');
-    PSPath := ExpandConstant('{tmp}\\crypta_kill_child.ps1');
+    PSPath := ExpandConstant('{tmp}\crypta_kill_child.ps1');
     PS :=
       '$procs = Get-CimInstance Win32_Process -Filter "Name = ''Crypta.exe''";' + #13#10 +
       '$pids = $procs | Select-Object -ExpandProperty ProcessId;' + #13#10 +
@@ -112,7 +112,7 @@ begin
     end
     else
     begin
-      if not Exec(ExpandConstant('{sys}\\WindowsPowerShell\\v1.0\\powershell.exe'),
+      if not Exec(ExpandConstant('{sys}\WindowsPowerShell\v1.0\powershell.exe'),
                   '-NoLogo -NoProfile -ExecutionPolicy Bypass -File ' + AddQuotes(PSPath),
                   '', SW_HIDE, ewWaitUntilTerminated, ResultCode) then
       begin
