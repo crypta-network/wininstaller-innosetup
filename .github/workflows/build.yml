@@ -111,6 +111,11 @@ jobs:
           .\gradlew.bat stageJpackage
           .\gradlew.bat updateSetupFile
 
+      - name: List jpackage contents
+        run: |
+          dir "${{ github.workspace }}\jpackage" /s
+        shell: cmd
+
       - name: Building the installer
         run: |
           "iscc.exe" "CryptaInstaller_InnoSetup.iss" /DArch=${{ env.RUNTIME_IDENTIFIER }}
