@@ -32,6 +32,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     env:
       RUNTIME_IDENTIFIER: ${{ matrix.os == 'windows-latest' && 'x64' || 'arm64'}}
+      ARTIFACT_ARCH: ${{ matrix.os == 'windows-latest' && 'amd64' || 'arm64'}}
     steps:
       - name: Set up JDK
         uses: actions/setup-java@v4
@@ -80,6 +81,7 @@ jobs:
 
     env:
       RUNTIME_IDENTIFIER: ${{ matrix.os == 'windows-latest' && 'x64' || 'arm64'}}
+      ARTIFACT_ARCH: ${{ matrix.os == 'windows-latest' && 'amd64' || 'arm64'}}
 
     steps:
       - name: Set up JDK
@@ -144,5 +146,5 @@ jobs:
         uses: actions/upload-artifact@v4
         if: ${{ inputs.upload-installer }}
         with:
-          name: cryptainstaller-${{ env.RUNTIME_IDENTIFIER }}
+          name: cryptainstaller-${{ env.ARTIFACT_ARCH }}
           path: "Output/CryptaInstaller.exe"
