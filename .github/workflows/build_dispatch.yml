@@ -8,9 +8,9 @@ on:
         type: string
         default: main
       jdk-version:
-        description: JDK major version to use (Temurin)
+        description: JDK major version to use (Microsoft OpenJDK)
         type: string
-        default: "21"
+        default: "25"
 
 jobs:
   call-reusable:

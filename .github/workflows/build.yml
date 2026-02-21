@@ -9,10 +9,10 @@ on:
         type: string
         default: main
       jdk-version:
-        description: Temurin JDK major version
+        description: Microsoft JDK major version
         required: false
         type: string
-        default: "21"
+        default: "25"
       os-matrix:
         description: JSON array of Windows runners to build on
         required: false
@@ -38,7 +38,7 @@ jobs:
         uses: actions/setup-java@v5
         with:
           java-version: ${{ inputs.jdk-version }}
-          distribution: "temurin"
+          distribution: "microsoft"
 
       - name: Checkout cryptad source code
         uses: actions/checkout@v6
@@ -88,7 +88,7 @@ jobs:
         uses: actions/setup-java@v5
         with:
           java-version: ${{ inputs.jdk-version }}
-          distribution: "temurin"
+          distribution: "microsoft"
 
       - name: Checkout windows installer
         uses: actions/checkout@v6
