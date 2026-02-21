@@ -39,6 +39,7 @@ jobs:
         with:
           java-version: ${{ inputs.jdk-version }}
           distribution: "microsoft"
+          check-latest: true
 
       - name: Checkout cryptad source code
         uses: actions/checkout@v6
@@ -89,6 +90,7 @@ jobs:
         with:
           java-version: ${{ inputs.jdk-version }}
           distribution: "microsoft"
+          check-latest: true
 
       - name: Checkout windows installer
         uses: actions/checkout@v6
