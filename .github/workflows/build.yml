@@ -9,7 +9,7 @@ on:
         type: string
         default: main
       jdk-version:
-        description: Microsoft JDK major version
+        description: Azul Zulu JDK major version
         required: false
         type: string
         default: "25"
@@ -38,7 +38,7 @@ jobs:
         uses: actions/setup-java@v5
         with:
           java-version: ${{ inputs.jdk-version }}
-          distribution: "microsoft"
+          distribution: "zulu"
           check-latest: true
 
       - name: Checkout cryptad source code
@@ -89,7 +89,7 @@ jobs:
         uses: actions/setup-java@v5
         with:
           java-version: ${{ inputs.jdk-version }}
-          distribution: "microsoft"
+          distribution: "zulu"
           check-latest: true
 
       - name: Checkout windows installer

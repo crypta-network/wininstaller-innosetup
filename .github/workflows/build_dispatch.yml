@@ -8,7 +8,7 @@ on:
         type: string
         default: main
       jdk-version:
-        description: JDK major version to use (Microsoft OpenJDK)
+        description: JDK major version to use (Azul Zulu)
         type: string
         default: "25"
 
